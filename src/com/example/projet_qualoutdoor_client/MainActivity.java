@@ -3,6 +3,7 @@ package com.example.projet_qualoutdoor_client;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.util.HashMap;
+import java.util.concurrent.ExecutionException;
 
 import com.example.projet_qualoutdoor_client_http.R;
 
@@ -59,6 +60,8 @@ public class MainActivity extends Activity {
 	    			toast.show();
 	    		}
 	    		else{
+	    			
+	    			
 		    		/*Dans le projet il n'y a pour l'instant besoin que d'envoyer un seul fichier
 		    		 * mais comme ce point n'est pas encore sur on définit une fonction capable de
 		    		 * passer au DataSendingManager une hashMap d'input : paramètres élémentaires et une
@@ -92,6 +95,7 @@ public class MainActivity extends Activity {
 		    		filesToSend.put("uploadedFile", monFichier);
 		    		
 		    		//LES HASHMAPS SONT PRETES ON PREPARE LE DATA SENDING MANAGER
+		    	
 		    		
 		    		//en fonction de l'option d'envoi choisie on fixe les derniers paramètres pour initialiser les
 		    		//data sending manager
@@ -125,6 +129,9 @@ public class MainActivity extends Activity {
 		    			Toast toast = Toast.makeText(getApplicationContext(), "please choose a protocole", Toast.LENGTH_SHORT);
 		    			toast.show();
 		    		}
+		    		
+		    		
+		    		
 	    		}
 	    		
 	    	}

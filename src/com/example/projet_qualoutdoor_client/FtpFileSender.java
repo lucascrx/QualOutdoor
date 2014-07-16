@@ -45,16 +45,18 @@ public class FtpFileSender implements Sender{
 		//initialisation de la réponse à retourner
 		String response="";
 		try {
+			//on recupere le temps courant de façon a signer le fichier de façon unique
+			long timestamp = System.currentTimeMillis();
 			//mise en forme de l'url complete
-			String target = "ftp://"+this.user+":"+this.password+"@"+url+this.storingPath+fileName+".txt";
+			String target = "ftp://"+this.user+":"+this.password+"@"+url+this.storingPath+fileName+timestamp+".csv";
 			//création de l'URL
 			URL targetAddress = new URL(target);
 			//ouverture de la connection
 			URLConnection connection = targetAddress.openConnection();
 			//autorisation des entrées afin d'écrire le contenu du fichier
 			connection.setDoOutput(true);
-			//l'autorisation des sorties pause problème : on autorise donc pas les sorties
-			//connection.setDoInput(true);
+			//on ne peut pas autoriser à la fois sortie et entrée.
+			
 			
 			//creation d'un flux d'écriture pour l'upload
 			OutputStream os = connection.getOutputStream();
