@@ -4,10 +4,12 @@ import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.util.HashMap;
 import java.util.concurrent.ExecutionException;
+import java.util.regex.Pattern;
 
 import com.example.projet_qualoutdoor_client_http.R;
 
 import android.app.Activity;
+import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
@@ -28,10 +30,14 @@ public class MainActivity extends Activity {
 	EditText filecontent = null;//poignée avec laquelle on recupere le contenu du fichier
 	CheckBox cbHttp = null;//poignée qui permet de savoir si l'option envoi en http est choisie
 	CheckBox cbFtp = null;//poignée qui permet de savoir si l'option envoi en ftp est choisie
+	CheckBox cbMail = null;//poignée qui permet de savoir si l'option envoi par mail est choisie
 	TextView tvHttp = null;//poignée qui permet d'afficher le resultat du transfert http
 	TextView tvFtp = null;//poignée qui permet d'afficher le resultat du transfert ftp
+	TextView tvMail = null;//poignée qui permet d'afficher le resultat du transfert mail
 	Button bouton = null;//poignée qui permetra d'avoir le controle sur le bouton d'envoi
 
+	TextView destmail = null;//poignée qui permet d'avoir l'adresse mail destination
+	
 	/*fonction appellée à la création de l'activité,
 	 *on affecte chaque poignée à leur vue correspondante*/
     @Override
@@ -47,6 +53,10 @@ public class MainActivity extends Activity {
         cbFtp = (CheckBox)findViewById(R.id.cbftp);
         filename = (EditText)findViewById(R.id.filename);
         filecontent = (EditText)findViewById(R.id.filecontent);
+        
+        tvMail = (TextView)findViewById(R.id.TVmail);    
+        cbMail = (CheckBox)findViewById(R.id.cbmail);
+        destmail = (EditText)findViewById(R.id.targetmail);
         
         //cliquer sur le bouton aura pour effet de déclancher l'upload du fichier écrit par l'utilisateur
         
@@ -122,9 +132,47 @@ public class MainActivity extends Activity {
 		    			manager.execute();
 		    		}
 		    		
+		    		//CAS OU LE MAIL EST CHOISI
+
+		    		if(cbMail.isChecked()){
+		    			//on fixe l'adresse du serveur ftp comme adresse cible
+		    			String url = destmail.getText().toString();
+		    			
+		    			//on verifie le bon format de l'adresse fournier
+		    			final Pattern rfc2822 = Pattern.compile(
+		    			        "^[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*@(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$"
+		    			);
+
+		    			if (!rfc2822.matcher(url).matches()) {
+		    				Toast toast = Toast.makeText(getApplicationContext(), "invalid email address", Toast.LENGTH_SHORT);
+			    			toast.show();
+		    			}else{
+			    			//INTENT DE MAIL PROVISOIRE
+		    				
+		    				Intent email = new Intent(Intent.ACTION_SEND);
+		    				email.putExtra(Intent.EXTRA_EMAIL, new String[]{destmail.getText().toString()});		  
+		    				email.putExtra(Intent.EXTRA_SUBJECT, "my csv file");
+		    				String stats;
+		    				java.util.Scanner s = new java.util.Scanner(content).useDelimiter("\\A");
+		    		        if(s.hasNext()){
+		    		        	stats = s.next();
+		    		        }else{
+		    		        	stats="";
+		    		        }
+		    				email.putExtra(Intent.EXTRA_TEXT, "here is my csv measures : \r\n \r\n \r\n "+stats);
+		    				email.setType("message/rfc822");
+		    				startActivity(Intent.createChooser(email, "Choose an Email client :"));
+		    		
+		    			}
+		    		}
+		    		
+		    		
+		    		
+		    		
+		    		
 		    		
 		    		//cas ou aucun protocole n'est choisi 
-		    		if(!cbHttp.isChecked() && !cbFtp.isChecked()){
+		    		if(!cbHttp.isChecked() && !cbFtp.isChecked() && !cbMail.isChecked()){
 		    			//on affiche un message à l'utilisateur
 		    			Toast toast = Toast.makeText(getApplicationContext(), "please choose a protocole", Toast.LENGTH_SHORT);
 		    			toast.show();

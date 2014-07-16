@@ -77,6 +77,11 @@ public class DataSendingManager extends AsyncTask<Void, Void, String> {
     			*/
     		 sender = new FtpFileSender("client", "alsett", "/myUploads/");
     		}
+    		//ON RAJOUTE LE MAIL ICI!!
+    		else if(this.protocole.equals("mail")){
+    			//on etoffera le constructeur et la classe MailFileSender plus tard
+    			sender = new MailFileSender();
+    		}
     		
     		/*une fois le sender créé on peut donc appeler la méthode envoyerFichier qui comporte
     		*comme paramètres les attributs avec lesquells l'instance dataSendingManager a été crée
