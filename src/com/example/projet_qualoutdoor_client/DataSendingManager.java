@@ -3,8 +3,9 @@ package com.example.projet_qualoutdoor_client;
 import java.io.InputStream;
 import java.util.HashMap;
 
+import android.app.ProgressDialog;
+import android.content.Context;
 import android.os.AsyncTask;
-
 import android.widget.TextView;
 
 /*Ce script ne mettra pas en oeuvre des politiques complexes d'ordonnancement
@@ -28,12 +29,17 @@ public class DataSendingManager extends AsyncTask<Void, Void, String> {
 	private String protocole;//le protocole à utiliser
 	//Ces paramètres réprésentent donc tous les paramètres communs aux différents types de connexions
 	
+	private OnTaskCompleted callback;//l'objet sur lequel appliquer la methode de callbak une fois la tache terminée
+	
+	private ProgressDialog progressDialog;	
+	
 	//Constructeur avec lequel on intitalise le DataSendingManager
-	public DataSendingManager(String url, HashMap<String,FileToUpload> filesToUpload,TextView vue,String proto){
+	public DataSendingManager(String url, HashMap<String,FileToUpload> filesToUpload,TextView vue,String proto,OnTaskCompleted cb){
 		this.target=url;
 		this.filesToUploadlist=filesToUpload;
 		this.printer=vue;
 		this.protocole=proto;
+		this.callback=cb;
 	}
 	
 	/*Fonction qui prend un temps relativement long par rapport au reste du code, on l'execute donc en arrière plan
@@ -100,12 +106,16 @@ public class DataSendingManager extends AsyncTask<Void, Void, String> {
     protected void onPostExecute(String result) {
     	//on affiche le résultat de l'opération dans la vue
     	this.printer.setText(result);
+    	this.callback.onTaskCompleted(this.protocole, this.filesToUploadlist);
+    	progressDialog.dismiss();
     }
     
     /*Fonction éxécutée avant la fonction d'arrière plan, elle permet juste d'initialiser ou de ré-initialiser
      * les affichages
      * */
     protected void onPreExecute() {
+    	//CONFIGURATION DE LA BARRE DE PROGRES
+    	progressDialog= ProgressDialog.show((Context)this.callback, "SENDING DATA","USING "+this.protocole+" PROTOCOLE", true);
     	//permet d'avoir une interface graphique plus parlante avec remise à zero du code retour
     	this.printer.setText("transfert en cours");	    
      }

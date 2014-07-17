@@ -10,6 +10,7 @@ import com.example.projet_qualoutdoor_client_http.R;
 
 import android.app.Activity;
 import android.content.Intent;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
@@ -22,7 +23,12 @@ import android.widget.Toast;
  * De récupérer le contenu et le nom du fichier créé par l'utilisateur pour le transmettre à un ou
  * des DataSending Managers qui seront initialisés dans cette classe*/
 
-public class MainActivity extends Activity {
+public class MainActivity extends Activity implements OnTaskCompleted {
+	
+	//on a besoin de recuperer l'activité comme variable de classe car des méthodes
+	//appartenant à des classes différentes auront besoin d'acceder ou bien à l'activité
+	//ou bien à l'ojet OnTaskCompleted
+	static Activity thisActivity = null;
 	
 	/*On déclare en variable globale de classe les poignées agissants sur des vues car
 	 * elles seront utilisées aussi par les sous classes*/
@@ -38,12 +44,15 @@ public class MainActivity extends Activity {
 
 	TextView destmail = null;//poignée qui permet d'avoir l'adresse mail destination
 	
+    
+	
 	/*fonction appellée à la création de l'activité,
 	 *on affecte chaque poignée à leur vue correspondante*/
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        thisActivity=this;
         
         //on récupère les éléments du layout qui nous interresse
         bouton = (Button)findViewById(R.id.button);
@@ -58,6 +67,7 @@ public class MainActivity extends Activity {
         cbMail = (CheckBox)findViewById(R.id.cbmail);
         destmail = (EditText)findViewById(R.id.targetmail);
         
+       
         //cliquer sur le bouton aura pour effet de déclancher l'upload du fichier écrit par l'utilisateur
         
 		bouton.setOnClickListener(new View.OnClickListener() {    
@@ -109,67 +119,42 @@ public class MainActivity extends Activity {
 		    		
 		    		//en fonction de l'option d'envoi choisie on fixe les derniers paramètres pour initialiser les
 		    		//data sending manager
+
 		    		
+		    		//CI DESSUS ON NE PEUT CHOISIR QU'UN SEUL PROTOCOLE CAR C'EST UNIQUEMENT LE 
+		    		//PREMIER TRANSFERT A LANCER, SI PLUSIEURS TRANSFERT CHOISIS, ON UTILISERA
+		    		//LA METHODE DE CALLBACK DE FACON A FAIRE CES TRANSFERTS L'UN APRES L'AUTRE
+		    			
+		    			
 		    		//cas ou HTTP est choisi
 		    		if(cbHttp.isChecked()){
 		    			//on fixe l'adresse du serveur http comme adresse cible
 		    			String url = "http://192.168.0.4:8080/Dummy/welcomeURL";
 		    			//on initialise donc le DataSendingManager en lui indiquant en plus la vue sur
 		    			//laquelle il affichera le résultat de l'opération et le protocole à mettre en oeuvre
-		    			DataSendingManager manager = new DataSendingManager(url,filesToSend,tvHttp,"http");
+		    			DataSendingManager managerHTTP = new DataSendingManager(url,filesToSend,tvHttp,"http",(OnTaskCompleted)thisActivity);
 		    			//...puis on lance le manager
-		    			manager.execute();
+		    			managerHTTP.execute();
 		    		}
 		    		
 		    		//cas ou FTP est choisi
-		    		if(cbFtp.isChecked()){
+		    		else if(cbFtp.isChecked()){
 		    			//on fixe l'adresse du serveur ftp comme adresse cible
 		    			String url = "192.168.0.4";
 		    			//on initialise donc le DataSendingManager en lui indiquant en plus la vue sur
 		    			//laquelle il affichera le résultat de l'opération et le protocole à mettre en oeuvre
-		    			DataSendingManager manager = new DataSendingManager(url,filesToSend,tvFtp,"ftp");
+		    			DataSendingManager managerFTP = new DataSendingManager(url,filesToSend,tvFtp,"ftp",(OnTaskCompleted)thisActivity);
 		    			//...puis on lance le manager
-		    			manager.execute();
+		    			managerFTP.execute();
 		    		}
 		    		
 		    		//CAS OU LE MAIL EST CHOISI
 
-		    		if(cbMail.isChecked()){
+		    		else if(cbMail.isChecked()){
 		    			//on fixe l'adresse du serveur ftp comme adresse cible
 		    			String url = destmail.getText().toString();
-		    			
-		    			//on verifie le bon format de l'adresse fournier
-		    			final Pattern rfc2822 = Pattern.compile(
-		    			        "^[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*@(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$"
-		    			);
-
-		    			if (!rfc2822.matcher(url).matches()) {
-		    				Toast toast = Toast.makeText(getApplicationContext(), "invalid email address", Toast.LENGTH_SHORT);
-			    			toast.show();
-		    			}else{
-			    			//INTENT DE MAIL PROVISOIRE
-		    				
-		    				Intent email = new Intent(Intent.ACTION_SEND);
-		    				email.putExtra(Intent.EXTRA_EMAIL, new String[]{destmail.getText().toString()});		  
-		    				email.putExtra(Intent.EXTRA_SUBJECT, "my csv file");
-		    				String stats;
-		    				java.util.Scanner s = new java.util.Scanner(content).useDelimiter("\\A");
-		    		        if(s.hasNext()){
-		    		        	stats = s.next();
-		    		        }else{
-		    		        	stats="";
-		    		        }
-		    				email.putExtra(Intent.EXTRA_TEXT, "here is my csv measures : \r\n \r\n \r\n "+stats);
-		    				email.setType("message/rfc822");
-		    				startActivity(Intent.createChooser(email, "Choose an Email client :"));
-		    		
-		    			}
+		    			sendFileByEmail(url,filesToSend);
 		    		}
-		    		
-		    		
-		    		
-		    		
-		    		
 		    		
 		    		//cas ou aucun protocole n'est choisi 
 		    		if(!cbHttp.isChecked() && !cbFtp.isChecked() && !cbMail.isChecked()){
@@ -186,5 +171,71 @@ public class MainActivity extends Activity {
 	   		
 		});
     }
+    
+    public void onTaskCompleted(String protocole, HashMap<String,FileToUpload> filesSended){
+    	if(protocole.equals("http")){//cas où le transfert HTTP vient de terminer
+    		//LA AUSSI CHOIX EXCLUSIF
+    		if(cbFtp.isChecked()){//si l'option ftp est choisie on lance un DataSendingManagerOrienté FTP
+    			//on fixe l'adresse du serveur ftp comme adresse cible
+    			String url = "192.168.0.4";
+    			//on initialise donc le DataSendingManager en lui indiquant en plus la vue sur
+    			//laquelle il affichera le résultat de l'opération et le protocole à mettre en oeuvre
+    			//on lui passe comme fichier, les fichiers envoyés par la tache précédente
+    			DataSendingManager managerFTP = new DataSendingManager(url,filesSended,tvFtp,"ftp",(OnTaskCompleted)thisActivity);
+    			//...puis on lance le manager
+    			managerFTP.execute();
+    		}else if(cbMail.isChecked()){
+    			//on fixe l'adresse du serveur ftp comme adresse cible
+    			String url = destmail.getText().toString();
+    			sendFileByEmail(url,filesSended);
+    		}	
+    	}
+    	else if(protocole.equals("ftp")){//SI LE TRANSFERT FTP EST FINI ON REGARDE S'IL FAUT ENVOYER UN MAIL
+    		if(cbMail.isChecked()){
+    			//on fixe l'adresse du serveur ftp comme adresse cible
+    			String url = destmail.getText().toString();
+    			sendFileByEmail(url,filesSended);
+    		}	
+    	
+    	}
+    }
+    
+    public static void sendFileByEmail(String dest, HashMap<String,FileToUpload> filesToUpload){
+    	//On se place dans le cas ou un seul fichier est dans la hashmap:
+    	
+		//on récupere donc la première entrée de la hashmap
+		String cle = filesToUpload.keySet().iterator().next();
+		//on récupère le nom du fichier
+		String fileName = filesToUpload.get(cle).getFileName();
+		//on récupère le contenu du fichier
+		InputStream content = filesToUpload.get(cle).getContent();
+		
+		//on verifie le bon format de l'adresse fournier
+		final Pattern rfc2822 = Pattern.compile(
+		        "^[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*@(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$"
+		);
+		//dans le cas ou le format de l'adresse est mauvais
+		if (!rfc2822.matcher(dest).matches()) {
+			Toast toast = Toast.makeText(thisActivity, "invalid email address", Toast.LENGTH_SHORT);
+			toast.show();
+		}else{
+			//ON PREPARE INTENT DE MAIL 
+			Intent email = new Intent(Intent.ACTION_SEND);
+			email.putExtra(Intent.EXTRA_EMAIL, new String[]{dest});//destinataire		  
+			email.putExtra(Intent.EXTRA_SUBJECT, "my csv file");//sujet
+			String stats;//string qui récupere le fichier pour l'afficher dans le contenu du mail
+			java.util.Scanner s = new java.util.Scanner(content).useDelimiter("\\A");
+	        if(s.hasNext()){
+	        	stats = s.next();
+	        }else{
+	        	stats="";
+	        }
+	        //on edite donc le contenu du mail
+			email.putExtra(Intent.EXTRA_TEXT, "here is my csv measures : \r\n \r\n \r\n "+stats);
+			email.setType("message/rfc822");//type du mail
+			thisActivity.startActivity(Intent.createChooser(email, "Choose an Email client :"));//on lance l'intent
+    	
+		}
+    }		
  
 }
