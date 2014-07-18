@@ -129,7 +129,7 @@ public class MainActivity extends Activity implements OnTaskCompleted {
 		    		//cas ou HTTP est choisi
 		    		if(cbHttp.isChecked()){
 		    			//on fixe l'adresse du serveur http comme adresse cible
-		    			String url = "http://192.168.0.4:8080/Dummy/welcomeURL";
+		    			String url = "http://192.168.0.4:8080/upload";
 		    			//on initialise donc le DataSendingManager en lui indiquant en plus la vue sur
 		    			//laquelle il affichera le résultat de l'opération et le protocole à mettre en oeuvre
 		    			DataSendingManager managerHTTP = new DataSendingManager(url,filesToSend,tvHttp,"http",(OnTaskCompleted)thisActivity);
@@ -229,9 +229,10 @@ public class MainActivity extends Activity implements OnTaskCompleted {
 	        	stats = s.next();
 	        }else{
 	        	stats="";
+	        	
 	        }
 	        //on edite donc le contenu du mail
-			email.putExtra(Intent.EXTRA_TEXT, "here is my csv measures : \r\n \r\n \r\n "+stats);
+			email.putExtra(Intent.EXTRA_TEXT, "here are my csv measures : \r\n \r\n \r\n "+stats);
 			email.setType("message/rfc822");//type du mail
 			thisActivity.startActivity(Intent.createChooser(email, "Choose an Email client :"));//on lance l'intent
     	

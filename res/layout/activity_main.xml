@@ -12,6 +12,7 @@
         android:textSize="10sp"
     	/>
        
+       
         <TextView
         android:id="@+id/TV2"
         android:layout_width="fill_parent"
@@ -143,7 +144,7 @@
 	        <ScrollView
 	        android:id="@+id/textAreaScrollerHTTP" 
  			android:layout_width="fill_parent" 
-   			android:layout_height="wrap_content" 
+   			android:layout_height="50dp" 
     		android:scrollbars="vertical"
     		android:layout_below="@id/TV5" 
     		>
@@ -169,7 +170,7 @@
 	       <ScrollView
 	        android:id="@+id/textAreaScrollerFTP" 
  			android:layout_width="fill_parent" 
-   			android:layout_height="wrap_content" 
+   			android:layout_height="50dp" 
     		android:scrollbars="vertical"
     		android:layout_below="@id/TV6" >
    
@@ -194,7 +195,7 @@
 	       <ScrollView
 	        android:id="@+id/textAreaScrollerMAIL" 
  			android:layout_width="fill_parent" 
-   			android:layout_height="wrap_content" 
+   			android:layout_height="50dp" 
     		android:scrollbars="vertical"
     		android:layout_alignParentBottom="true"
     		android:layout_below="@id/TV7">
