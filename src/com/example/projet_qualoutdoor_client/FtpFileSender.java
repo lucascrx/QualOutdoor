@@ -45,10 +45,10 @@ public class FtpFileSender implements Sender{
 		//initialisation de la réponse à retourner
 		String response="";
 		try {
-			//on recupere le temps courant de façon a signer le fichier de façon unique
-			long timestamp = System.currentTimeMillis();
+			
+	
 			//mise en forme de l'url complete
-			String target = "ftp://"+this.user+":"+this.password+"@"+url+this.storingPath+fileName+timestamp+".csv";
+			String target = "ftp://"+this.user+":"+this.password+"@"+url+this.storingPath+fileName+".csv";
 			//création de l'URL
 			URL targetAddress = new URL(target);
 			//ouverture de la connection

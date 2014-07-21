@@ -7,19 +7,156 @@
         android:id="@+id/TV1"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
-        android:text="FICHIER A ENVOYER"
+        android:text="BASE DE DONNEE A REMPLIR"
         android:layout_marginBottom="10dp"
         android:textSize="10sp"
     	/>
        
-       
+       <TableLayout
+        android:id="@+id/bdd"
+ 		android:layout_width="fill_parent"
+ 		android:layout_height="wrap_content"
+ 		android:layout_below="@id/TV1" 
+  		android:stretchColumns="0,1,2,3">
+  		       
+          <TableRow>
+		    <TextView 
+		      android:text="valeur 0"
+		      android:layout_column="0"
+		      android:textSize="8sp"
+		      android:gravity="center"
+		    />
+		    <TextView 
+		      android:text="valeur 1"
+		      android:layout_column="1"
+		      android:textSize="8sp"
+		      android:gravity="center"
+		    />
+		    <TextView 
+		      android:text="valeur 2"
+		      android:layout_column="2"
+		      android:textSize="8sp"
+		      android:gravity="center"
+		    />
+		    <TextView 
+		      android:text="valeur 3"
+		      android:layout_column="3"
+		      android:textSize="8sp"
+		      android:gravity="center"
+		    />
+		  </TableRow>
+          <TableRow>
+		    <EditText 
+		      android:id="@+id/v10"
+		      android:layout_column="0"
+		      android:textSize="8sp"
+		    />
+		    <EditText 
+		      android:id="@+id/v11"
+		      android:layout_column="1"
+		      android:textSize="8sp"
+		    />
+		    <EditText 
+		      android:id="@+id/v12"
+		      android:layout_column="2"
+		      android:textSize="8sp"
+		    />
+		    <EditText 
+		      android:id="@+id/v13"
+		      android:layout_column="3"
+		      android:textSize="8sp"
+		    />
+		  </TableRow>
+           <TableRow>
+		    <EditText 
+		      android:id="@+id/v20"
+		      android:layout_column="0"
+		      android:textSize="8sp"
+		    />
+		    <EditText 
+		      android:id="@+id/v21"
+		      android:layout_column="1"
+		      android:textSize="8sp"
+		    />
+		    <EditText 
+		      android:id="@+id/v22"
+		      android:layout_column="2"
+		      android:textSize="8sp"
+		    />
+		    <EditText 
+		      android:id="@+id/v23"
+		      android:layout_column="3"
+		      android:textSize="8sp"
+		    />
+		  </TableRow>
+           
+          <TableRow>
+		    <EditText 
+		      android:id="@+id/v30"
+		      android:layout_column="0"
+		      android:textSize="8sp"
+		    />
+		    <EditText 
+		      android:id="@+id/v31"
+		      android:layout_column="1"
+		      android:textSize="8sp"
+		    />
+		    <EditText 
+		      android:id="@+id/v32"
+		      android:layout_column="2"
+		      android:textSize="8sp"
+		    />
+		    <EditText 
+		      android:id="@+id/v33"
+		      android:layout_column="3"
+		      android:textSize="8sp"
+		    />
+		  </TableRow>
+		  <TableRow>
+          <TextView 
+              android:text= "HEADER"
+		      android:id="@+id/tvH1"
+		      android:layout_column="0"
+		      android:textSize="8sp"
+		      android:gravity="center"
+		    />
+          
+          <EditText 
+		      android:id="@+id/v33"
+		      android:layout_column="1"
+		      android:textSize="8sp"
+		      android:layout_span="3"
+		    />
+		   </TableRow>
+          <TableRow>    
+            <Button
+		       android:id="@+id/buttonbdd"
+		       android:text="CREER LA BDD" 
+		       android:layout_column="0" 
+		       android:layout_span="2"
+		    />
+          <TextView 
+              android:id="@+id/bddprinter"
+		      android:text=""
+		      android:layout_column="2"
+		      android:layout_span="2"
+		      android:gravity="top"
+		      android:textSize="8sp"
+		      android:lines="6"
+		    />
+              
+          </TableRow>
+          
+  
+         </TableLayout>
+     <!--  
         <TextView
         android:id="@+id/TV2"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
         android:text="nom du fichier"
         android:textSize="8sp"
-        android:layout_below="@id/TV1"
+        android:layout_below="@id/bdd"
     	/>
        
        
@@ -48,13 +185,13 @@
        android:layout_below="@id/TV3" 
     	/>
       
-      
+        -->
        <LinearLayout 	 
            android:id="@+id/cb"
 	 	 	android:layout_width="fill_parent"
 	  		android:layout_height="wrap_content"
 	  		android:orientation="horizontal"
-	  		android:layout_below="@id/filecontent" 
+	  		android:layout_below="@id/bdd" 
           >
           
                     <TextView
@@ -129,8 +266,6 @@
        android:layout_below="@id/mail" 
        />
       
-      
-      
        
 	        <TextView
 	        android:id="@+id/TV5"
@@ -138,13 +273,12 @@
 	        android:layout_height="wrap_content"
 	        android:text="resultat transfert http: "
 	        android:layout_below="@id/button" 
-	        android:layout_marginTop="30dp"
 	    	/>
 	        
 	        <ScrollView
 	        android:id="@+id/textAreaScrollerHTTP" 
  			android:layout_width="fill_parent" 
-   			android:layout_height="50dp" 
+   			android:layout_height="30dp" 
     		android:scrollbars="vertical"
     		android:layout_below="@id/TV5" 
     		>
@@ -163,14 +297,13 @@
 	        android:layout_width="fill_parent"
 	        android:layout_height="wrap_content"
 	        android:text="resultat transfert ftp: "
-	        android:layout_marginTop="10dp"
 	        android:layout_below="@id/textAreaScrollerHTTP" 
 	    	/>
 	       
 	       <ScrollView
 	        android:id="@+id/textAreaScrollerFTP" 
  			android:layout_width="fill_parent" 
-   			android:layout_height="50dp" 
+   			android:layout_height="30dp" 
     		android:scrollbars="vertical"
     		android:layout_below="@id/TV6" >
    
@@ -188,14 +321,13 @@
 	        android:layout_width="fill_parent"
 	        android:layout_height="wrap_content"
 	        android:text="resultat transfert mail: "
-	        android:layout_marginTop="10dp"
 	       	android:layout_below="@id/textAreaScrollerFTP"
 	    	/>
 	       
 	       <ScrollView
 	        android:id="@+id/textAreaScrollerMAIL" 
  			android:layout_width="fill_parent" 
-   			android:layout_height="50dp" 
+   			android:layout_height="30dp" 
     		android:scrollbars="vertical"
     		android:layout_alignParentBottom="true"
     		android:layout_below="@id/TV7">

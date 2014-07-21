@@ -2,6 +2,7 @@ package com.example.projet_qualoutdoor_client;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.regex.Pattern;
@@ -12,6 +13,7 @@ import android.app.Activity;
 import android.content.Intent;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.CheckBox;
@@ -41,10 +43,23 @@ public class MainActivity extends Activity implements OnTaskCompleted {
 	TextView tvFtp = null;//poignée qui permet d'afficher le resultat du transfert ftp
 	TextView tvMail = null;//poignée qui permet d'afficher le resultat du transfert mail
 	Button bouton = null;//poignée qui permetra d'avoir le controle sur le bouton d'envoi
-
+	Button boutonbdd = null;//poignée qui permetra d'avoir le controle sur le bouton de création de la bdd
 	TextView destmail = null;//poignée qui permet d'avoir l'adresse mail destination
 	
-    
+	//POIGNEE ET WIDGETS RELATIF A LA BASE DONNEE
+	
+	TextView dbpanel;//poignee qui permet d'avoir le controle sur le textview affichiant l'état de la création de la bdd
+	//Ci dessous les poignées permettant de recuperer les valeurs inscrites dans la bdd
+	//premiere ligne
+	TextView num10 = null ;TextView num11 = null ;TextView num12 = null ;TextView num13 = null ;
+    //deuxieme ligne
+	TextView num20 = null ;TextView num21 = null ;TextView num22 = null ;TextView num23 = null ;
+	//troisièe ligne
+	TextView num30 = null ;TextView num31 = null ;TextView num32 = null ;TextView num33 = null ;
+	
+	//input stream engendré par la lecture de la base de donnée:
+	InputStream dbstream=null;
+	
 	
 	/*fonction appellée à la création de l'activité,
 	 *on affecte chaque poignée à leur vue correspondante*/
@@ -60,29 +75,107 @@ public class MainActivity extends Activity implements OnTaskCompleted {
         tvFtp = (TextView)findViewById(R.id.TVftp);    
         cbHttp = (CheckBox)findViewById(R.id.cbhttp);
         cbFtp = (CheckBox)findViewById(R.id.cbftp);
-        filename = (EditText)findViewById(R.id.filename);
-        filecontent = (EditText)findViewById(R.id.filecontent);
+     //   filename = (EditText)findViewById(R.id.filename);
+     //   filecontent = (EditText)findViewById(R.id.filecontent);
         
         tvMail = (TextView)findViewById(R.id.TVmail);    
         cbMail = (CheckBox)findViewById(R.id.cbmail);
         destmail = (EditText)findViewById(R.id.targetmail);
         
+        //INITIALISATION DE LA BASE DE DONNEE:
+        dbpanel = (TextView)findViewById(R.id.bddprinter);
+        boutonbdd = (Button)findViewById(R.id.buttonbdd);
+        num10 = (TextView)findViewById(R.id.v10); num11 = (TextView)findViewById(R.id.v11); num12 = (TextView)findViewById(R.id.v12) ; num13 = (TextView)findViewById(R.id.v13);
+        num20 = (TextView)findViewById(R.id.v20); num21 = (TextView)findViewById(R.id.v21); num22 = (TextView)findViewById(R.id.v22) ; num23 = (TextView)findViewById(R.id.v23);
+        num30 = (TextView)findViewById(R.id.v30); num31 = (TextView)findViewById(R.id.v31); num32 = (TextView)findViewById(R.id.v32) ; num33 = (TextView)findViewById(R.id.v33);
+        
+        
+    	boutonbdd.setOnClickListener(new View.OnClickListener() {
+    	      @Override
+    	      public void onClick(View v) {
+    	    	//LA PREMIERE CHOSE A FAIRE EST DE REMPLIR LA BASE DE DONNEES AVEC LES CHAMPS FOURNIS
+    	    	  
+    	    	  dbpanel.setText("from wigdet to csv file via bdd:");//initialisation du panel
+    	    	  
+    	    	  //on initialise donc la bdd
+    	    	 //poignée sur l'instance qui transfere nos instructions sur la bdd
+    	    	 SQLConnector connecteur = new SQLConnector(thisActivity);//on instancie un nouveau connecteur ce qui provoque la creation d'un createur de bdd
+    	          connecteur.open();//la bdd est generée à partir du créateur
+  	    		
+    	          
+  	    		//IL FAUDRAIT VERIFIER QUE TOUS LES CHAMPS DE LA BASE DE DONNEE SONT NON NULL
+  	    		
+    	    	try{
+    	    	  
+    	    	  
+  	    		//on récupere les entiers entrés
+  	    		int i10 = Integer.parseInt(num10.getText().toString());int i11 = Integer.parseInt(num11.getText().toString());int i12 = Integer.parseInt(num12.getText().toString());int i13 = Integer.parseInt(num13.getText().toString());
+  	    		int i20 = Integer.parseInt(num20.getText().toString());int i21 = Integer.parseInt(num21.getText().toString());int i22 = Integer.parseInt(num22.getText().toString());int i23 = Integer.parseInt(num23.getText().toString());
+  	    		int i30 = Integer.parseInt(num30.getText().toString());int i31 = Integer.parseInt(num31.getText().toString());int i32 = Integer.parseInt(num32.getText().toString());int i33 = Integer.parseInt(num33.getText().toString());
+  	    		//on prépare les lignes de la bdd stockées sous forme d'arrayList
+  	    		//premiere ligne
+  	    		ArrayList<Integer> ligne1 = new ArrayList<Integer>();
+  	    		ligne1.add(i10);ligne1.add(i11);ligne1.add(i12);ligne1.add(i13);
+  	    		//deuxieme ligne
+  	    		ArrayList<Integer> ligne2 = new ArrayList<Integer>();
+  	    		ligne2.add(i20);ligne2.add(i21);ligne2.add(i22);ligne2.add(i23);
+  	    		//troisieme ligne
+  	    		ArrayList<Integer> ligne3 = new ArrayList<Integer>();
+  	    		ligne3.add(i30);ligne3.add(i31);ligne3.add(i32);ligne3.add(i33);
+  	    		
+  	    		//insertion des lignes dans la base de données
+  	    		if(connecteur.insertLine(ligne1) != -1){
+  	    			dbpanel.append("insertion ligne 1 ok; ");
+  	    			Log.d("insert L1 ","OK");
+  	    		}
+  	    		if(connecteur.insertLine(ligne2) != -1){
+  	    			dbpanel.append("insertion ligne 2 ok; ");
+  	    			Log.d("insert L2 ","OK");
+  	    		}
+  	    		if(connecteur.insertLine(ligne3) != -1){
+  	    			dbpanel.append("insertion ligne 3 ok; ");
+  	    			Log.d("insert L3 ","OK");
+  	    		}
+  	    		dbpanel.append("insertion terminée; ");
+  	    		
+  	    		//MAINTENANT IL FAUT A PARTIR DE LA BASE DE DONNEES CONSTRUIRE L'INPUT STREAM
+    	    	  
+  	    		dbstream = connecteur.getInputStream();
+  	    		dbpanel.append("Stream généré; "); 
+    	    	  
+    	        connecteur.close();
+    	    	}catch(NumberFormatException e){
+    	    		Toast toast = Toast.makeText(getApplicationContext(), "please complete all fields of the db with numbers", Toast.LENGTH_SHORT);
+	    			toast.show();
+    	    		
+    	    	}
+    	        
+    	      }
+    	    });
+   
        
         //cliquer sur le bouton aura pour effet de déclancher l'upload du fichier écrit par l'utilisateur
         
 		bouton.setOnClickListener(new View.OnClickListener() {    
 			//on va definir les paramètres à utiliser pour l'upload dans la fonction onClick
 	    	public void onClick(View v){
+	    		try{
+	    		//on verifie que le fichier à envoyer issu de la bdd existe bien
 	    		
+	    		if(dbstream==null){
+	    			throw new FileToSendException("csv file not created!");
+	    		}
+	    		
+	    		
+	    		/*
 	    		if(filename.getText().length()==0||filecontent.getText().length()==0){
 	    			//getion du cas où un des 2 champs est vide
 	    			Toast toast = Toast.makeText(getApplicationContext(), "please complete all fields", Toast.LENGTH_SHORT);
 	    			toast.show();
 	    		}
 	    		else{
-	    			
-	    			
-		    		/*Dans le projet il n'y a pour l'instant besoin que d'envoyer un seul fichier
+	    		*/
+	    			/*Dans le projet il n'y a pour l'instant besoin que d'envoyer un seul fichier
 		    		 * mais comme ce point n'est pas encore sur on définit une fonction capable de
 		    		 * passer au DataSendingManager une hashMap d'input : paramètres élémentaires et une
 		    		 * hashMap de fichiers*/
@@ -92,8 +185,11 @@ public class MainActivity extends Activity implements OnTaskCompleted {
 		    		 *D'ENVOI, ON NE GARDE DONC QUE LA HASMAP DE FICHIER ET LES INPUTS SERONT FIXES
 		    		 *DANS LA CLASSE PROPRE A HTTP MAIS DU COUP INNACCESSIBLES PAR L'UTILISATEUR
 		    		 */
-		    			//Hashmap d'input élémentaires : si on envoie pas d'input simples, la hashmap sera vide
-		    			//HashMap<String,String> inputToSend = new HashMap<String,String>();
+	    		
+		    	
+	    		
+	    		//Hashmap d'input élémentaires : si on envoie pas d'input simples, la hashmap sera vide
+		    	//HashMap<String,String> inputToSend = new HashMap<String,String>();
 		    		
 		    		
 		    		//Hashmap de fichiers:: si on envoie pas de fichiers, la hashmap sera vide
@@ -103,11 +199,13 @@ public class MainActivity extends Activity implements OnTaskCompleted {
 		    		
 		    		//dans notre cas il n'y a qu'un seul fichier que l'on récupère avec les poignées précédemment définies
 		    		//on récupère le Nom
-		    		String name = filename.getText().toString();
+		    		
+		    		//nom généré avec un TIMESTAMP
+		    		String name = "file"+System.currentTimeMillis();//filename.getText().toString();
 		    		//on récupère le contenu...
-		    		String contentString = filecontent.getText().toString();
+		    		//String contentString = filecontent.getText().toString();
 		    		//..que l'on transforme en InputStream
-		    		InputStream content = new ByteArrayInputStream(contentString.getBytes());    		
+		    		InputStream content = dbstream;//new ByteArrayInputStream(contentString.getBytes());
 		    		//on construit donc une instance de fileToUpload
 		    		FileToUpload monFichier = new FileToUpload(name,content);
 		    		//on le place dans la hashmap en fixant le nom du champs du formulaire le fichier se rapportera
@@ -165,12 +263,18 @@ public class MainActivity extends Activity implements OnTaskCompleted {
 		    		
 		    		
 		    		
+	    		}catch(FileToSendException e){
+	    			Toast toast = Toast.makeText(getApplicationContext(), e.getMessage(), Toast.LENGTH_SHORT);
+	    			toast.show();
 	    		}
 	    		
 	    	}
 	   		
 		});
     }
+    
+    
+  
     
     public void onTaskCompleted(String protocole, HashMap<String,FileToUpload> filesSended){
     	if(protocole.equals("http")){//cas où le transfert HTTP vient de terminer
@@ -237,6 +341,9 @@ public class MainActivity extends Activity implements OnTaskCompleted {
 			thisActivity.startActivity(Intent.createChooser(email, "Choose an Email client :"));//on lance l'intent
     	
 		}
-    }		
- 
+    }
+    
+    
+    
+    
 }

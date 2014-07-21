@@ -35,7 +35,7 @@ public class MailFileSender implements Sender{
                       new javax.mail.Authenticator() {
                           protected PasswordAuthentication getPasswordAuthentication() {
                               return new PasswordAuthentication(
-                                      "lucas.croixmarie@gmail.com", "68AuguBlan013");
+                                      "lucas.croixmarie@gmail.com", "***");
                           }
                       });
               
