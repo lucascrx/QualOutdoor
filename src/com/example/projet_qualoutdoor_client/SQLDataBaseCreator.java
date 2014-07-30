@@ -21,13 +21,9 @@ public class SQLDataBaseCreator extends SQLiteOpenHelper{
 	private static final String DATABASE_NAME = "recorder.db";//nom de la base de donnée
 	private static final int DATABASE_VERSION = 1;//version de la base de donnée
 	//les différentes tables de la base de données
-	private TableDB table_ref;
-	private TableDB table_meas;
-	private TableDB table_cell;
-	private TableDB table_ss;
-	private TableDB table_call;
-	private TableDB table_upload;
-	private TableDB table_download;
+	private TableDB table_reference;
+	private TableDB table_measure;
+	
 	
 	
 	
@@ -35,13 +31,9 @@ public class SQLDataBaseCreator extends SQLiteOpenHelper{
 	public SQLDataBaseCreator(Context context) throws DataBaseException {
 		super(context, DATABASE_NAME, null, DATABASE_VERSION);
 		// TODO Auto-generated constructor stub
-		this.table_ref = new TableDB("recorder_tt",new String[] {"ls","rs","VALUE"}, new String[] {"INTEGER","INTEGER NOT NULL","INTEGER NOT NULL"});
-		this.table_meas = new TableDB("measure_it",new String[] {"ID","DATE","LAT","LNG"}, new String[] {"INTEGER PRIMARY KEY AUTOINCREMENT","DATETIME","REAL","REAL"});
-		this.table_cell = new TableDB("cellule_identity_it",new String[] {"ID_MEASURE","VALUE"}, new String[] {"INTEGER","INTEGER"});
-		this.table_ss = new TableDB("signal_strengh_it",new String[] {"ID_MEASURE","VALUE"}, new String[] {"INTEGER","REAL"});
-		this.table_call = new TableDB("call_it",new String[] {"ID_MEASURE","STATE"}, new String[] {"INTEGER","INTEGER"});
-		this.table_upload = new TableDB("upload_it",new String[] {"ID_MEASURE","YIELD"}, new String[] {"INTEGER","REAL"});
-		this.table_download = new TableDB("download_it",new String[] {"ID_MEASURE","YIELD"}, new String[] {"INTEGER","REAL"});
+		this.table_reference = new TableDB("recorder_tt",new String[] {"ls","rs","VALUE"}, new String[] {"INTEGER","INTEGER NOT NULL","INTEGER NOT NULL"});
+		this.table_measure = new TableDB("measure_it",new String[] {"ID","DATE","LAT","LNG","DATA"}, new String[] {"INTEGER PRIMARY KEY AUTOINCREMENT","DATETIME","REAL","REAL","VARCHAR"});
+		
 	}
 	
 	/*Fonction à implementer obligatoirement
@@ -49,13 +41,8 @@ public class SQLDataBaseCreator extends SQLiteOpenHelper{
 	 *Ici on indique de détruire nos tables et de les recréer */
 	public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
 		//requete correspondant à la destruction de la table 
-		db.execSQL("DROP TABLE IF EXISTS '" + this.table_ref.getName() + "' ");
-		db.execSQL("DROP TABLE IF EXISTS '" + this.table_meas.getName() + "'");
-		db.execSQL("DROP TABLE IF EXISTS '" + this.table_cell.getName() + "'");
-		db.execSQL("DROP TABLE IF EXISTS '" + this.table_ss.getName() + "'");
-		db.execSQL("DROP TABLE IF EXISTS '" + this.table_call.getName() + "'");
-		db.execSQL("DROP TABLE IF EXISTS '" + this.table_upload.getName() + "'");
-		db.execSQL("DROP TABLE IF EXISTS '" + this.table_download.getName() + "'");
+		db.execSQL("DROP TABLE IF EXISTS '" + this.table_reference.getName() + "' ");
+		db.execSQL("DROP TABLE IF EXISTS '" + this.table_measure.getName() + "'");
 		//on recrée les nouvelles tables
 		onCreate(db);
 	}
@@ -70,15 +57,11 @@ public class SQLDataBaseCreator extends SQLiteOpenHelper{
 				//CREATION DES OBJETS TableDB
 			
 				//EXECUTION DES REQUETES
-			db.execSQL(table_ref.createTableintoDB());//construction de la table de référence
-			db.execSQL(table_meas.createTableintoDB());//construction de la table de mesure
-			db.execSQL(table_cell.createTableintoDB());//construction de la table de cellule
-			db.execSQL(table_ss.createTableintoDB());//construction de la table signal strengh
-			db.execSQL(table_call.createTableintoDB());//construction de la table call
-			db.execSQL(table_upload.createTableintoDB());//construction de la table upload
-			db.execSQL(table_download.createTableintoDB());//construction de la table download
+			db.execSQL(table_reference.createTableintoDB());//construction de la table de référence
+			db.execSQL(table_measure.createTableintoDB());//construction de la table de mesure
+
 				//On INSERE LE ROOT DANS LA TABLE DE REFERENCE
-			db.execSQL("INSERT INTO "+this.table_ref.getName()+" (ls,rs,value) VALUES (1,2,0); ");
+			db.execSQL("INSERT INTO "+this.table_reference.getName()+" (ls,rs,value) VALUES (1,2,0); ");
 			
 			Log.d("DEBUG SQL CREATOR", "tables créés");
 			
@@ -87,26 +70,13 @@ public class SQLDataBaseCreator extends SQLiteOpenHelper{
 	
 	
 	
-	public TableDB getTable(String str) throws DataBaseException{
-		try {
-			TableDB table = null;
-			//on regarde si dans la classe il existe un attribut du nom demandé
-			Field result = this.getClass().getDeclaredField(str);
-			//on récupère l'acces à l'attribut
-			table = (TableDB) result.get(this);
-			return table;
-		} catch (NoSuchFieldException e) {
-			// TODO Auto-generated catch block
-			throw new DataBaseException("Get Table Exception : "+ e.toString());
-		} catch (IllegalAccessException e) {
-			// TODO Auto-generated catch block
-			throw new DataBaseException("Get Table Exception : "+ e.toString());
-		} catch (IllegalArgumentException e) {
-			// TODO Auto-generated catch block
-			throw new DataBaseException("Get Table Exception : "+ e.toString());
-		}		
+	public TableDB getTableReference() {
+			return this.table_reference;
 	}
 	
+	public TableDB getTableMeasure(){
+		return this.table_measure;
+	}
 	
 	
 	

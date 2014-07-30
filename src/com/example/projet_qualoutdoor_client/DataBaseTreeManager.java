@@ -39,12 +39,14 @@ public class DataBaseTreeManager {
 	 * */
 	public boolean contains(int ref){
         String selectQuery = "SELECT * FROM "+table.getName()+" WHERE ls > ? AND rs < ? AND VALUE= ?";
-        Cursor c = db.rawQuery(selectQuery, new String[] {Integer.toString(this.currentMinSide), Integer.toString(this.currentMinSide), Integer.toString(ref)});
+        Cursor c = db.rawQuery(selectQuery, new String[] {Integer.toString(this.currentMinSide), Integer.toString(this.currentMaxSide), Integer.toString(ref)});
         if (c.moveToFirst()) {
              this.currentMinSide = c.getInt(c.getColumnIndex("ls"));
              this.currentMaxSide = c.getInt(c.getColumnIndex("rs"));
+             Log.d("DEBUG TREE******************","CURRENT CONTAINS"+ref);
              return true;
         }else{
+        	Log.d("DEBUG TREE******************","CURRENT DOES NOT CONTAINS"+ref);
         	return false;	
         }  
 		
@@ -95,6 +97,7 @@ public class DataBaseTreeManager {
 	public void findOrCreate(int ref){
 		if(!this.contains(ref)){//Si l'intervalle courant ne contient pas de noeud contenant la référence indiquée
 			this.insert(ref);//alors on le crée
+			Log.d("DEBUG TREE*****",ref + "NOT CONTAINED THEN CREATION ");
 		}//Dans tous les cas le DataBaseTreeManager aura ses bornes mises à jour
 	}
 	
@@ -113,9 +116,11 @@ public class DataBaseTreeManager {
 		     if (c.moveToFirst()) {
 		    	 //on a retrouvé le père on met à jour les bornes du DataBaseTreeManager
 	             int max = c.getInt(1);
-	             int min = c.getInt(0); 
+	             int min = c.getInt(0);
+	             Log.d("DEBUG TREE **********","FATHER OF NODE FOUND CURRENT INT IS "+this.currentMinSide+" "+this.currentMaxSide);
 	             this.currentMaxSide= max;
 	             this.currentMinSide = min;
+	             Log.d("DEBUG TREE **********","POINTING OF FATHER NOW INT IS"+this.currentMinSide+" "+this.currentMaxSide);
 	        }else{
 	        	throw new DataBaseException("TREE MANAGER GET FATHER : can't find node father");
 	        }

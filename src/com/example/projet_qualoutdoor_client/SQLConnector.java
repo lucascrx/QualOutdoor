@@ -25,12 +25,13 @@ public class SQLConnector {
 	
 	private DataBaseTreeManager manager;//manager de l'arbre de la bdd
 	
-	//le connector garde en memoire les derniers MCC,MNC,NTC accèdés afin d'indiquer au
+	//le connector garde en memoire les derniers MCC,MNC,NTC,Metric accèdés afin d'indiquer au
 	//manager comment se déplacer dans l'arbre pour une nouvelle insertion.
-	//ce triplet represent la position courante du manager après insertion
+	//ce quadruplet represe la position courante du manager après insertion
 	private int lastMCC;
 	private int lastMNC;
 	private int lastNTC;
+	private int lastMetric;
 	
 	
 	
@@ -47,7 +48,7 @@ public class SQLConnector {
 		//on change finalement on ne remet pas à zero la bdd
 		//elle sera flushée à chaque nouvel envoi.
 		//on initialise le manager
-		this.manager = new DataBaseTreeManager(this.db,this.dbCreator.getTable("table_ref"));
+		this.manager = new DataBaseTreeManager(this.db,this.dbCreator.getTableReference());
 	}
 	
 	//fermeture de la base de données
@@ -57,61 +58,80 @@ public class SQLConnector {
 	
 	
 	/*fonction qui permet d'inserer une ligne correspondant à une mesure dans la table de reference*/
-	public void insertMeasureReference(int MCC, int MNC, int NTC, int ref ){
+	public void insertReference(int MCC, int MNC, int NTC,int metric, int ref ){
 		try{
 			Log.d("DEBUG **** TREE","MCC_OLD : "+this.lastMCC+" MCC_NEW : "+MCC);
 			Log.d("DEBUG **** TREE","MNC_OLD : "+this.lastMNC+" MNC_NEW : "+MNC);
 			Log.d("DEBUG **** TREE","NTC_OLD : "+this.lastNTC+" NTC_NEW : "+NTC);
+			Log.d("DEBUG **** TREE","METRIC_OLD : "+this.lastMetric+" Metric_NEW : "+metric);
 			
 			if(this.lastMCC==MCC){//si la nouvelle mesure est dans le MCC actuel
 				if(this.lastMNC==MNC){//si la nouvelle mesure est dans le MNC actuel
 					if(this.lastNTC==NTC){//si la nouvelle mesure est dans le NTC actuel
-						
-						this.manager.insertLeaf(ref);
+						if(this.lastMetric==metric){//si la nouvelle mesure est dans la metrique actuelle
+							this.manager.insertLeaf(ref);
+						}
+						else{//sinon on remonte au NTC et on se place sur ou on crée l'intervalle correspondant à la metric
+							this.manager.getFather();//on remonte au NTC
+							this.manager.findOrCreate(metric);//on redescend dans la bonne metrique
+							//le manager pointe à présent sur la bonne métrique: on crée donc la feuille
+							this.manager.insertLeaf(ref);
+							//mise a jour de la vielle metrique
+							this.lastMetric = metric;
+						}
 					}else{//sinon on remonte au MNC et on se place sur ou on crée l'intervalle correspondant au NTC
+						this.manager.getFather();//on remonte au NTC
 						this.manager.getFather();//on remonte au MNC
 						this.manager.findOrCreate(NTC);//on redescend dans le nouveau NTC
-						//le manager pointe a présent sur l'intervalle du nouveau NTC: on crée donc la feuille
+						this.manager.findOrCreate(metric);//on redescend dans la nvlle metrique
+						//le manager pointe a présent sur l'intervalle de la nvlle metrique : on crée donc la feuille
 						this.manager.insertLeaf(ref);
-						//mise a jour du vieux NTC
+						//mise a jour du vieux NTC et de la vielle metrique
 						this.lastNTC=NTC;
+						this.lastMetric = metric;
 					}	
 				}else{//dans de cas on remonte jusqu'au MCC pour chercher ou créer le MNC indiqué
+					this.manager.getFather();//on remonte au NTC
 					this.manager.getFather();//on remonte au MNC
 					this.manager.getFather();//on remonte au MCC
 					this.manager.findOrCreate(MNC);//on redescend dans le nvx MNC
 					this.manager.findOrCreate(NTC);//on redescend dans le nvx NTC
-					//le manager pointe a présent sur l'intervalle du nouveau NTC: on crée donc la feuille
+					this.manager.findOrCreate(metric);//on redescend dans la nvlle metrique
+					//le manager pointe a présent sur l'intervalle de la nvlle metrique: on crée donc la feuille
 					this.manager.insertLeaf(ref);
-					//Mise à jour des vieux MNC et NTC
+					//Mise à jour des vieux MNC et NTC et metrique
 					this.lastMNC=MNC;
 					this.lastNTC=NTC;
+					this.lastMetric = metric;
 				}	
 			}else{//dans ce cas il faut remonter à la racine pour retrouver ou créer le MCC indiqué
+				this.manager.getFather();//on remonte au NTC
 				this.manager.getFather();//on remonte au MNC
 				this.manager.getFather();//on remonte au MCC
 				this.manager.getFather();//on remonte à la racine
 				this.manager.findOrCreate(MCC);//on redescend dans le nvx MCC
 				this.manager.findOrCreate(MNC);//on redescend dans le nvx MNC
 				this.manager.findOrCreate(NTC);//on redescend dans le nvx NTC		
-				//le manager pointe a présent sur l'intervalle du nouveau NTC: on crée donc la feuille
+				this.manager.findOrCreate(metric);//on redescend dans la nvlle metrique
+				//le manager pointe a présent sur l'intervalle de la nvlle metrique: on crée donc la feuille
 				this.manager.insertLeaf(ref);
-				//mise a jour des vieux MCC, MNC et NTC
+				//mise a jour des vieux MCC, MNC et NTC et metrique
 				this.lastMCC=MCC;
 				this.lastMNC=MNC;
 				this.lastNTC=NTC;
+				this.lastMetric = metric;
 			}
 		}catch(DataBaseException e){
 			e.printStackTrace();
 		}
 	}
 	
-	/*Methode qui insere une mesure GEO TIME dans la table des mesures, elle renvoie l'identifiant de la
+	/*Methode qui insere une mesure dans la table des mesures, elle renvoie l'identifiant de la
 	 * ligne insérée ou -1 en cas de probleme*/
-	public int insertMeasure(long lng, long lat){
+	public int insertData(long lat, long lng,String data){
 		int id = -1;
 		try{//on prépare la requete d'insertion, la date est générée par SQL
-			String insertQuery = "INSERT INTO "+this.dbCreator.getTable("table_meas").getName()+" (DATE , LAT , LNG) VALUES ( CURRENT_TIMESTAMP ,"+lat+","+lng+");";
+			String insertQuery = "INSERT INTO "+this.dbCreator.getTableMeasure().getName()+" (DATE , LAT , LNG, DATA) VALUES ( CURRENT_TIMESTAMP ,"+lat+","+lng+", '"+data+"' );";
 			db.execSQL(insertQuery);//Execution de la requete d'insertion
 			Cursor c = db.rawQuery("SELECT last_insert_rowid()", null);//on récupère l'ID du dernier élément inséré
 			if(c.moveToFirst()){//si on retrouve bien la ligne insérée on retrouve son ID
@@ -126,22 +146,6 @@ public class SQLConnector {
 		return id;
 	}
 	
-	/*
-	 * Fonction qui permet d'inserer une ligne dans une table de metrique se rapportant à une
-	 * mesure dont l'identifiant est id
-	 * 
-	 * comme les tables de metriques sont toutes composées de 2 colonnes ID et value l'insertion
-	 * de la valeur passé se fera toujours dans la 2e colonne
-	 */
-	public void insertMetric(String tableName, int id, Number value){
-		try{
-			TableDB table = this.dbCreator.getTable(tableName);
-			String insertQuery = "INSERT INTO "+table.getName()+" ( ID_MEASURE , "+table.getColumsName().get(1)+" ) VALUES ( "+id+", "+value+" );";
-			db.execSQL(insertQuery);
-		}catch(DataBaseException e){
-			e.printStackTrace();
-		}
-	}
 	
 	
 	/*
@@ -151,60 +155,39 @@ public class SQLConnector {
 	 * 
 	 * 
 	 */
-	public void insertMeasure(HashMap<String,Number> completeMeasure){
-		int MCC = (Integer) completeMeasure.get("MCC");
-		completeMeasure.remove("MCC");
-		int MNC = (Integer) completeMeasure.get("MNC");
-		completeMeasure.remove("MNC");
-		int NTC = (Integer) completeMeasure.get("NTC");
-		completeMeasure.remove("NTC");
-		
-		long lng = (Long) completeMeasure.get("lng");
-		completeMeasure.remove("lng");
-		long lat = (Long) completeMeasure.get("lat");
-		completeMeasure.remove("lat");
-		//insertion dans la table GEOTIME
-		int ref = this.insertMeasure(lng, lat);
-		//insertion dans la table de reference 
-		this.insertMeasureReference(MCC, MNC, NTC, ref);
-		//il faut maintenant remplir les tables des métriques:
-		Log.d("DEBUG MEASURE", "0");
-		for(String table : completeMeasure.keySet()){
-			Log.d("DEBUG MEASURE", "1 in for loop with metric"+table);
-			this.insertMetric(table, ref, completeMeasure.get(table));
+	public void insertMeasure(HashMap<String,Number> contextList, HashMap<Integer,String> dataList){
+		int MCC = (Integer) contextList.get("MCC");
+		int MNC = (Integer) contextList.get("MNC");
+		int NTC = (Integer) contextList.get("NTC");
+		long lng = (Long) contextList.get("lng");
+		long lat = (Long) contextList.get("lat");
+
+		//INSERTIONS SUCESSIVES DANS LA TABLE DE MESURES
+		//CHAQUE INSERTION DE DATA EST SUIVIE PAR UNE INSERTION ASSOCIEE DANS LA TABLE DE REFERENCE
+		int ref;
+		for(int dataType : dataList.keySet()){
+			ref = this.insertData(lat,lng,dataList.get(dataType));//on insert la data dans la table de mesure
+			this.insertReference(MCC, MNC, NTC, dataType, ref);//on recupere l'id donnée pour referencer la data dans la table de reference
 		}
+		
 		//TEST
 		
-		String select = "SELECT * FROM "+askCreatorForTableName("table_ref") ;
+		String select = "SELECT * FROM "+this.dbCreator.getTableReference().getName() ;
 		Cursor c = this.db.rawQuery(select,null);
 		String str = DatabaseUtils.dumpCursorToString(c);
 		Log.d("DEBUG REFERENCE",str);
 		c.close();
 		
-		String select2 = "SELECT * FROM "+askCreatorForTableName("table_meas") ;
+		String select2 = "SELECT * FROM "+this.dbCreator.getTableMeasure().getName();
 		Cursor c2 = this.db.rawQuery(select2,null);
 		String str2 = DatabaseUtils.dumpCursorToString(c2);
 		Log.d("DEBUG MEASURE",str2);
 		c2.close();
 		
-		String select3 = "SELECT * FROM "+askCreatorForTableName("table_cell") ;
-		Cursor c3 = this.db.rawQuery(select3,null);
-		String str3 = DatabaseUtils.dumpCursorToString(c3);
-		Log.d("DEBUG CELL", "cell"+str3);
-		c3.close();
+		
 		
 	}
-	
-	
-	public String askCreatorForTableName(String tableName){
-		String name = "";
-		try{
-			name = this.dbCreator.getTable(tableName).getName();
-		}catch(DataBaseException e){
-			e.printStackTrace();
-		}
-		return name;
-	}
+
 	
 	/*
 	//methode qui permet de transformer le contenu de la table en un inputStream sous le format csv

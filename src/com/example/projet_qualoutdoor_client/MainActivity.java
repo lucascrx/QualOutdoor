@@ -148,19 +148,23 @@ public class MainActivity extends Activity implements OnTaskCompleted {
         this.boutonMCC.setOnClickListener(new View.OnClickListener() {
   	      @Override
   	      public void onClick(View v) {
-  	    	  //on releve la valeur insérée pour le mcc
-  	    	  String mess = mcc.getText().toString();
-  	    	  if(mess.equals("")){//controle de la valeur
-  	        	Toast toast = Toast.makeText(getApplicationContext(), "please complete MCC field", Toast.LENGTH_SHORT);
-  				toast.show();
-  	    	  }else{//mise a jour du curseur
-  	    		  int newMCC = Integer.parseInt(mess);
-  	    		Log.d("CONTEXT DEBUG","MCC"+newMCC);
-  	    		  contexte.updateMCC(newMCC);
-    	    		Toast toast = Toast.makeText(getApplicationContext(), "New MCC : context has changed", Toast.LENGTH_SHORT);
-      				toast.show();
+  	    	  try{
+	  	    	  //on releve la valeur insérée pour le mcc
+	  	    	  String mess = mcc.getText().toString();
+	  	    	  if(mess.equals("")){//controle de la valeur
+	  	        	Toast toast = Toast.makeText(getApplicationContext(), "please complete MCC field", Toast.LENGTH_SHORT);
+	  				toast.show();
+	  	    	  }else{//mise a jour du curseur
+	  	    		  int newMCC = Integer.parseInt(mess);
+	  	    		Log.d("CONTEXT DEBUG","MCC"+newMCC);
+	  	    		  contexte.updateMCC(newMCC);
+	    	    		Toast toast = Toast.makeText(getApplicationContext(), "New MCC : context has changed", Toast.LENGTH_SHORT);
+	      				toast.show();
+	  	    	  }
+  	    	  }catch(NumberFormatException e){
+  	    		Toast toast = Toast.makeText(getApplicationContext(), "enter a valid MCC", Toast.LENGTH_SHORT);
+    				toast.show();
   	    	  }
-  	        
   	      }
   	    });
 
@@ -168,18 +172,23 @@ public class MainActivity extends Activity implements OnTaskCompleted {
         this.boutonMNC.setOnClickListener(new View.OnClickListener() {
   	      @Override
   	      public void onClick(View v) {
-  	    	  //on releve la valeur insérée pour le mcc
-  	    	  String mess = mnc.getText().toString();
-  	    	  if(mess.equals("")){//controle de la valeur
-  	        	Toast toast = Toast.makeText(getApplicationContext(), "please complete MNC field", Toast.LENGTH_SHORT);
-  				toast.show();
-  	    	  }else{//mise a jour du curseur
-  	    		  int newMNC = Integer.parseInt(mess);
-  	    		  Log.d("CONTEXT DEBUG","MNC"+newMNC);
-  	    		  contexte.updateMNC(newMNC);
-    	    		Toast toast = Toast.makeText(getApplicationContext(), "New MNC : context has changed", Toast.LENGTH_SHORT);
-      				toast.show();
-  	    	  }  
+  	    	  //on releve la valeur insérée pour le ntc
+  	    	  try{
+	  	    	  String mess = mnc.getText().toString();
+	  	    	  if(mess.equals("")){//controle de la valeur
+	  	        	Toast toast = Toast.makeText(getApplicationContext(), "please complete MNC field", Toast.LENGTH_SHORT);
+	  				toast.show();
+	  	    	  }else{//mise a jour du curseur
+	  	    		  int newMNC = Integer.parseInt(mess);
+	  	    		  Log.d("CONTEXT DEBUG","MNC"+newMNC);
+	  	    		  contexte.updateMNC(newMNC);
+	    	    		Toast toast = Toast.makeText(getApplicationContext(), "New MNC : context has changed", Toast.LENGTH_SHORT);
+	      				toast.show();
+	  	    	  }
+	    	  }catch(NumberFormatException e){
+	    		Toast toast = Toast.makeText(getApplicationContext(), "enter a valid NTC", Toast.LENGTH_SHORT);
+				toast.show();
+	    	  }
   	      }
   	    });
         
@@ -187,18 +196,23 @@ public class MainActivity extends Activity implements OnTaskCompleted {
         this.boutonNTC.setOnClickListener(new View.OnClickListener() {
   	      @Override
   	      public void onClick(View v) {
-  	    	  //on releve la valeur insérée pour le mcc
-  	    	  String mess = ntc.getText().toString();
-  	    	  if(mess.equals("")){//controle de la valeur
-  	        	Toast toast = Toast.makeText(getApplicationContext(), "please complete NTC field", Toast.LENGTH_SHORT);
-  				toast.show();
-  	    	  }else{//mise a jour du curseur
-  	    		  int newNTC = Integer.parseInt(mess);
-  	    		Log.d("CONTEXT DEBUG","NTC"+newNTC);
-  	    		  contexte.updateNTC(newNTC);
-  	    		Toast toast = Toast.makeText(getApplicationContext(), "New NTC : context has changed", Toast.LENGTH_SHORT);
-  				toast.show();
-  	    	  }  	        
+  	    	  //on releve la valeur insérée pour le ntc
+  	    	  try{
+	  	    	  String mess = ntc.getText().toString();
+	  	    	  if(mess.equals("")){//controle de la valeur
+	  	        	Toast toast = Toast.makeText(getApplicationContext(), "please complete NTC field", Toast.LENGTH_SHORT);
+	  				toast.show();
+	  	    	  }else{//mise a jour du curseur
+	  	    		  int newNTC = Integer.parseInt(mess);
+	  	    		Log.d("CONTEXT DEBUG","NTC"+newNTC);
+	  	    		  contexte.updateNTC(newNTC);
+	  	    		Toast toast = Toast.makeText(getApplicationContext(), "New NTC : context has changed", Toast.LENGTH_SHORT);
+	  				toast.show();
+	  	    	  }
+	    	  }catch(NumberFormatException e){
+	    		Toast toast = Toast.makeText(getApplicationContext(), "enter a valid NTC", Toast.LENGTH_SHORT);
+				toast.show();
+	    	  }
   	      }
   	    });
         
@@ -212,103 +226,116 @@ public class MainActivity extends Activity implements OnTaskCompleted {
     		//if(context.)
     	      @Override
     	      public void onClick(View v) {
-    	    	  Log.d("DEBUG CLICK", "1");
-    	    	  //on récupere les valeurs qui sont remontés par la mesure
-    	    	  ArrayList<String> fields = new ArrayList<String>();
-    	    	  ArrayList<Number> values = new ArrayList<Number>();
-    	    	  //ON RECUPERE LAT ET LNG
-    	    	  Log.d("DEBUG CLICK", "101");
-    	    	  String lngTemp = lng.getText().toString(); 
-    	    	  Log.d("DEBUG CLICK", "102");
-    	    	  if(lngTemp.equals("")){
-	    	    		Toast toast = Toast.makeText(getApplicationContext(), "LONGITUDE field is empty!", Toast.LENGTH_SHORT);
-	      				toast.show();
-    	    	  }else{
-    	    		  Log.d("DEBUG CLICK", "103");
-    	    		  fields.add("lng");
-    	    		  Log.d("DEBUG CLICK", "104");
-    	    		  values.add(Long.parseLong(lngTemp));
-    	    		  Log.d("DEBUG CLICK", "11");
-    	    	  }
-    	    	  
-    	    	  String latTemp = lat.getText().toString();
-    	    	  if(latTemp.equals("")){
-	    	    		Toast toast = Toast.makeText(getApplicationContext(), "LATITUDE field is empty!", Toast.LENGTH_SHORT);
-	      				toast.show();
-    	    	  }else{
-    	    		  fields.add("lat");
-    	    		  values.add(Long.parseLong(latTemp));
-    	    		  Log.d("DEBUG CLICK", "12");
-    	    	  }
-    	    	  
-    	    	  
-    	    	  //ON REGARDE CELL ID
-    	    	  if(cbCellid.isChecked()){//on ajoute en fait le nom de la table annexe
-    	    		  String val = cellid.getText().toString();
-    	    		  if(val.equals("")){
-    	    	    		Toast toast = Toast.makeText(getApplicationContext(), "cell ID field is empty!", Toast.LENGTH_SHORT);
-    	      				toast.show();
-    	    		  }else{
-        	    		  	fields.add("table_cell");
-    	    			  	values.add(Integer.parseInt(val));
-    	    			  	Log.d("DEBUG CLICK", "13 ");
-    	    		  }
-    	    	  }
-    	    	  //ON REGARDE Signal Strengh
-    	    	  if(cbSignalStrengh.isChecked()){//on ajoute en fait le nom de la table annexe
-    	    		  String val = signalStrengh.getText().toString();
-    	    		  if(val.equals("")){
-    	    	    		Toast toast = Toast.makeText(getApplicationContext(), "signal strengh field is empty!", Toast.LENGTH_SHORT);
-    	      				toast.show();
-    	    		  }else{
-        	    		  	fields.add("table_ss");
-    	    			  	values.add(Long.parseLong(val));
-    	    		  }
-    	    	  }
-    	    	  //ON REGARDE Call
-    	    	  if(cbCall.isChecked()){//on ajoute en fait le nom de la table annexe
-    	    		  String val = call.getText().toString();
-    	    		  if(val.equals("")){
-    	    	    		Toast toast = Toast.makeText(getApplicationContext(), "call field is empty!", Toast.LENGTH_SHORT);
-    	      				toast.show();
-    	    		  }else{
-    	    			  	fields.add("table_call");
-    	    			  	values.add(Integer.parseInt(val));
-    	    		  }
-    	    	  }
-    	    	  //ON REGARDE Upload
-    	    	  if(cbUpload.isChecked()){//on ajoute en fait le nom de la table annexe
-    	    		  String val = upload.getText().toString();
-    	    		  if(val.equals("")){
-    	    	    		Toast toast = Toast.makeText(getApplicationContext(), "upload field is empty!", Toast.LENGTH_SHORT);
-    	      				toast.show();
-    	    		  }else{
-    	   	    		  	fields.add("table_upload");
-    	    			  	values.add(Long.parseLong(val));
-    	    		  }
-    	    	  }
-    	    	  //ON REGARDE Download
-    	    	  if(cbDownload.isChecked()){//on ajoute en fait le nom de la table annexe
-    	    		  String val = download.getText().toString();
-    	    		  if(val.equals("")){
-    	    	    		Toast toast = Toast.makeText(getApplicationContext(), "download field is empty!", Toast.LENGTH_SHORT);
-    	      				toast.show();
-    	    		  }else{
-        	    		  	fields.add("table_download");
-    	    			  	values.add(Long.parseLong(val));
-    	    		  }
-    	    	  }
-    	    	  Log.d("DEBUG CLICK", "2");
-    	    	  //on remplit la mesure à donner au connecteur
-    	    	  HashMap<String,Number> completeMeasure = new HashMap<String,Number>();
     	    	  try {
-    	    		 //maintenant que fields et values sont remplis on les passe au contexte qui nous revoie une mesure complete 
-					completeMeasure = contexte.getMeasure(fields, values);
-					Log.d("DEBUG COMPLETE MEASURE",completeMeasure.toString());
-					///IL FAUT TESTER SI COMPLETE MEASURE EST BIEN REMPLIE!!!!!!!!!!!!!!!!!!
+    	    		  if(contexte.getMCC()==0||contexte.getMNC()==0||contexte.getNTC()==0){
+    	    			  throw new CollectMeasureException("contexte is not correctly filled!");
+    	    		  }
+	    	    	  Log.d("DEBUG CLICK", "1");
+
+	    	    	  //ON RECUPERE LAT ET LNG
+	    	    	  long latValue=0;
+	    	    	  long lngValue=0;
+	    	    	  Log.d("DEBUG CLICK", "101");
+	    	    	  String lngTemp = lng.getText().toString(); 
+	    	    	  Log.d("DEBUG CLICK", "102");
+	    	    	  if(lngTemp.equals("")){
+	    	    		  throw new CollectMeasureException("LONGITUDE field is empty!");
+	    	    	  }else{
+	    	    		  Log.d("DEBUG CLICK", "103");
+	    	    		  lngValue = Long.parseLong(lngTemp);
+	    	    		  Log.d("DEBUG CLICK", "11");
+	    	    	  }
+	    	    	  
+	    	    	  String latTemp = lat.getText().toString();
+	    	    	  if(latTemp.equals("")){
+		    	    		throw new CollectMeasureException("LATITUDE field is empty");
+	    	    	  }else{
+	    	    		  latValue = Long.parseLong(latTemp);
+	    	    		  Log.d("DEBUG CLICK", "12");
+	    	    	  }
+	    	    	  
+	    	    	  //on récupere les valeurs qui sont remontés par la mesure
+	    	    	  ArrayList<Integer> dataTypes = new ArrayList<Integer>();
+	    	    	  ArrayList<String> dataValues = new ArrayList<String>();
+	    	    	  boolean checker = false;//valeur qui permet de savoir si au moins un champ a été coché
+	    	    	  //ON REGARDE CELL ID
+	    	    	  if(cbCellid.isChecked()){//on ajoute en fait le nom de la table annexe
+	    	    		  String val = cellid.getText().toString();
+	    	    		  if(val.equals("")){
+	    	    			  throw new CollectMeasureException("cell field is empty while box is checked");
+	    	    		  }else{
+	    	    			  dataTypes.add(1);
+	    	    			  dataValues.add(val);
+	    	    			  Log.d("DEBUG CLICK", "13 ");
+	    	    			  checker=true;
+	    	    		  }
+	    	    	  }
+	    	    	  //ON REGARDE Signal Strengh
+	    	    	  if(cbSignalStrengh.isChecked()){//on ajoute en fait le nom de la table annexe
+	    	    		  String val = signalStrengh.getText().toString();
+	    	    		  if(val.equals("")){
+	    	    			  throw new CollectMeasureException("signal strengh field is empty while box is checked");
+	    	    		  }else{
+	    	    			  dataTypes.add(2);
+	    	    			  dataValues.add(val);
+	    	    			  checker=true;
+	    	    		  }
+	    	    	  }
+	    	    	  //ON REGARDE Call
+	    	    	  if(cbCall.isChecked()){//on ajoute en fait le nom de la table annexe
+	    	    		  String val = call.getText().toString();
+	    	    		  if(val.equals("")){
+	    	    			  throw new CollectMeasureException("call field is empty while box is checked");
+	    	    		  }else{
+	    	    			  dataTypes.add(3);
+	    	    			  dataValues.add(val);
+	    	    			  checker=true;
+	    	    		  }
+	    	    	  }
+	    	    	  //ON REGARDE Upload
+	    	    	  if(cbUpload.isChecked()){//on ajoute en fait le nom de la table annexe
+	    	    		  String val = upload.getText().toString();
+	    	    		  if(val.equals("")){
+	    	    			  throw new CollectMeasureException("upload field is empty while box is checked");
+	    	    		  }else{
+	    	    			  	dataTypes.add(4);
+	    	    			  	dataValues.add(val);
+	    	    			  	checker=true;
+	    	    		  }
+	    	    	  }
+	    	    	  //ON REGARDE Download
+	    	    	  if(cbDownload.isChecked()){//on ajoute en fait le nom de la table annexe
+	    	    		  String val = download.getText().toString();
+	    	    		  if(val.equals("")){
+	    	    			  throw new CollectMeasureException("download field is empty while box is checked");
+	    	    		  }else{
+	    	    			  	dataTypes.add(5);
+	    	    			  	dataValues.add(val);
+	    	    			  	checker=true;
+	    	    		  }
+	    	    	  }
+	    	    	  //on regarde si au moins un champs a été coché
+	    	    	  if(!checker){
+	    	    		  throw new CollectMeasureException("no measure type choosed");
+	    	    	  }
+	    	    	  Log.d("DEBUG CLICK", "2");
+	    	    	  //hashMap qui rassemble des type de data relevées et leur contenu
+	    	    	  HashMap<Integer,String> dataList = new HashMap<Integer,String>();
+	    	    	  //construction de la hashmap des types
+	    	    	  int i=0;
+	    	    	  for(int type : dataTypes){
+	    	    		  dataList.put(type, dataValues.get(i));
+	    	    		  i++;
+	    	    	  }
+	    	    	  //hashMap qui rassemble l'ensembles des élements du contexte et les coordonnées GPS
+	    	    	  HashMap<String,Number> contextList = new HashMap<String,Number>();
+    	    		 //on recupere le contexte actuel
+	    	    	  contextList = contexte.generateNewContext(latValue, lngValue);
+					Log.d("DEBUG CONTEXT",contextList.toString());
+					Log.d("DEBUG DATA",dataList.toString());
 					//on donne maintenant la mesure complete au connecteur afin qu'il remplisse la bdd.
 					Log.d("DEBUG INSERT","0");
-					connecteur.insertMeasure(completeMeasure);
+					connecteur.insertMeasure(contextList,dataList);
 					Log.d("DEBUG INSERT","1");
 					insertState.setText("leaf inserted in db");
 					

@@ -8,61 +8,54 @@ import java.util.HashMap;
  * */
 public class MeasureContext {
 	
-	private HashMap<String,Integer> context ;
+	private int MCC;
+	private int MNC;
+	private int NTC;
+	private int metric;
+
 	
 	public MeasureContext(){
-		this.context = new HashMap<String,Integer>();
-		this.context.put("MCC", null);
-		this.context.put("MNC",null);
-		this.context.put("NTC", null);
+		this.MCC=0;
+		this.MNC=0;
+		this.NTC=0;
 	}
 	
 	public int getMCC(){
-		return this.context.get("MCC");
+		return this.MCC;
 	}
 	
 	public int getMNC(){
-		return this.context.get("MNC");
+		return this.MNC;
 	}
 	
 	public int getNTC(){
-		return this.context.get("NTC");
+		return this.NTC;
 	}
 	
 	//MISE A JOUR DES PARAMETRES DU CONTEXTE
 	public void updateMCC(int newMCC){
-		this.context.put("MCC", newMCC);
+		this.MCC = newMCC;
 	}
 	
 	public void updateMNC(int newMNC){
-		this.context.put("MNC", newMNC);
+		this.MNC = newMNC;
 	}
 	
 	public void updateNTC(int newNTC){
-		this.context.put("NTC", newNTC);
+		this.NTC = newNTC;
 	}
 	
-	/*
-	 * A chaque enregistrement d'une nouvelle valeur, on construit une hasmap contenant tous les paramètres de la 
-	 * mesures et on y ajoute une "photographie" du contexte courant
-	 */
-	public HashMap<String,Number> getMeasure(ArrayList<String> fields, ArrayList<Number> values) throws CollectMeasureException{
-		HashMap<String,Number> completeMeasure = new HashMap<String,Number>();
-		//on remplit la hashmap avec le contexte:
-		for( String param : this.context.keySet()){
-			completeMeasure.put(param, this.context.get(param));
-		}
-		//on remplit la hashmap avec les metriques fournies
-		if(fields.size()==values.size()){
-			int i = 0;
-			for(String field : fields ){
-				completeMeasure.put(field, values.get(i));
-				i++;
-			}
-		}else{
-			throw new CollectMeasureException("Metric values and fields mismatch !");
-		}
-		return completeMeasure;
+	public HashMap<String,Number> generateNewContext(long lat, long lng){
+		HashMap<String,Number> result = new HashMap<String,Number>();
+		result.put("MCC", this.MCC);
+		result.put("MNC", this.MNC);
+		result.put("NTC", this.NTC);
+		result.put("lat", lat);
+		result.put("lng", lng);
+		
+		return result;
 	}
+	
+
 	
 }
