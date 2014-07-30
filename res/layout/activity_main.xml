@@ -3,152 +3,340 @@
     android:layout_width="fill_parent"
     android:layout_height="fill_parent" >
     
-       <TextView
-        android:id="@+id/TV1"
-        android:layout_width="fill_parent"
-        android:layout_height="wrap_content"
-        android:text="BASE DE DONNEE A REMPLIR"
-        android:layout_marginBottom="10dp"
-        android:textSize="10sp"
-    	/>
        
-       <TableLayout
-        android:id="@+id/bdd"
- 		android:layout_width="fill_parent"
- 		android:layout_height="wrap_content"
- 		android:layout_below="@id/TV1" 
-  		android:stretchColumns="0,1,2,3">
-  		       
-          <TableRow>
-		    <TextView 
-		      android:text="valeur 0"
-		      android:layout_column="0"
-		      android:textSize="8sp"
-		      android:gravity="center"
-		    />
-		    <TextView 
-		      android:text="valeur 1"
-		      android:layout_column="1"
-		      android:textSize="8sp"
-		      android:gravity="center"
-		    />
-		    <TextView 
-		      android:text="valeur 2"
-		      android:layout_column="2"
-		      android:textSize="8sp"
-		      android:gravity="center"
-		    />
-		    <TextView 
-		      android:text="valeur 3"
-		      android:layout_column="3"
-		      android:textSize="8sp"
-		      android:gravity="center"
-		    />
-		  </TableRow>
-          <TableRow>
-		    <EditText 
-		      android:id="@+id/v10"
-		      android:layout_column="0"
-		      android:textSize="8sp"
-		    />
-		    <EditText 
-		      android:id="@+id/v11"
-		      android:layout_column="1"
-		      android:textSize="8sp"
-		    />
-		    <EditText 
-		      android:id="@+id/v12"
-		      android:layout_column="2"
-		      android:textSize="8sp"
-		    />
-		    <EditText 
-		      android:id="@+id/v13"
-		      android:layout_column="3"
-		      android:textSize="8sp"
-		    />
-		  </TableRow>
-           <TableRow>
-		    <EditText 
-		      android:id="@+id/v20"
-		      android:layout_column="0"
-		      android:textSize="8sp"
-		    />
-		    <EditText 
-		      android:id="@+id/v21"
-		      android:layout_column="1"
-		      android:textSize="8sp"
-		    />
-		    <EditText 
-		      android:id="@+id/v22"
-		      android:layout_column="2"
-		      android:textSize="8sp"
-		    />
-		    <EditText 
-		      android:id="@+id/v23"
-		      android:layout_column="3"
-		      android:textSize="8sp"
-		    />
-		  </TableRow>
-           
-          <TableRow>
-		    <EditText 
-		      android:id="@+id/v30"
-		      android:layout_column="0"
-		      android:textSize="8sp"
-		    />
-		    <EditText 
-		      android:id="@+id/v31"
-		      android:layout_column="1"
-		      android:textSize="8sp"
-		    />
-		    <EditText 
-		      android:id="@+id/v32"
-		      android:layout_column="2"
-		      android:textSize="8sp"
-		    />
-		    <EditText 
-		      android:id="@+id/v33"
-		      android:layout_column="3"
-		      android:textSize="8sp"
-		    />
-		  </TableRow>
-		  <TableRow>
-          <TextView 
-              android:text= "HEADER"
-		      android:id="@+id/tvH1"
-		      android:layout_column="0"
-		      android:textSize="8sp"
-		      android:gravity="center"
-		    />
-          
-          <EditText 
-		      android:id="@+id/v33"
-		      android:layout_column="1"
-		      android:textSize="8sp"
-		      android:layout_span="3"
-		    />
-		   </TableRow>
-          <TableRow>    
-            <Button
-		       android:id="@+id/buttonbdd"
-		       android:text="CREER LA BDD" 
-		       android:layout_column="0" 
-		       android:layout_span="2"
-		    />
-          <TextView 
-              android:id="@+id/bddprinter"
-		      android:text=""
-		      android:layout_column="2"
-		      android:layout_span="2"
-		      android:gravity="top"
-		      android:textSize="8sp"
-		      android:lines="6"
-		    />
+       <LinearLayout
+       	android:id="@+id/feuille"
+	 	android:layout_width="fill_parent"
+	  	android:layout_height="wrap_content"
+	  	android:orientation="horizontal">
+	   
+           <LinearLayout
+	       	android:id="@+id/context"
+		 	android:layout_width="wrap_content"
+		  	android:layout_height="wrap_content"
+		  	android:orientation="vertical">
+		  	
+				<TextView
+     			android:id="@+id/TVcontext"
+     		   	android:layout_width="wrap_content"
+     		  	android:layout_height="wrap_content"
+     			android:text="CONTEXT"
+     			android:textSize="8sp"/>	 
+    				
+		  	 	<LinearLayout
+		       	android:id="@+id/GROUP"
+			 	android:layout_width="fill_parent"
+			  	android:layout_height="wrap_content"
+			  	android:orientation="horizontal">
+			  	
+                    <TextView
+     				   android:id="@+id/TVGROUP"
+     				   android:layout_width="wrap_content"
+     				   android:layout_height="wrap_content"
+     				   android:text="GROUP:  "
+     				   android:textSize="8sp"/>	  
+    					
+                    <TextView
+			       		android:id="@+id/ETGROUP"
+			       		android:layout_width="wrap_content"
+			       		android:layout_height="wrap_content"
+			       		android:textSize="8sp"
+			       		android:text="2345"/>
+            
+               </LinearLayout>
+
+		  	 	<LinearLayout
+		       	android:id="@+id/USER"
+			 	android:layout_width="wrap_content"
+			  	android:layout_height="wrap_content"
+			  	android:orientation="horizontal">
+                    
+                    <TextView
+     				   android:id="@+id/TVUSER"
+     				   android:layout_width="wrap_content"
+     				   android:layout_height="wrap_content"
+     				   android:text="USER"
+     				   android:textSize="8sp"/>	  
+    					
+                    <TextView
+			       		android:id="@+id/ETUSER"
+			       		android:layout_width="wrap_content"
+			       		android:layout_height="wrap_content"
+			       		android:textSize="8sp"
+			       		android:text="764" />
+            
+               </LinearLayout>
+               
+		  	 	<LinearLayout
+		       	android:id="@+id/MCC"
+			 	android:layout_width="wrap_content"
+			  	android:layout_height="wrap_content"
+			  	android:orientation="horizontal">
+                    
+                    <TextView
+     				   android:id="@+id/TVMCC"
+     				   android:layout_width="wrap_content"
+     				   android:layout_height="wrap_content"
+     				   android:text="MCC"
+     				   android:textSize="8sp"/>	  
+    					
+                    <EditText
+			       		android:id="@+id/ETMCC"
+			       		android:layout_width="wrap_content"
+			       		android:layout_height="wrap_content"
+			       		android:textSize="8sp"
+			       		android:text=""  />
+                    
+                    <Button
+				   		android:id="@+id/buttonMCC"
+				       	android:layout_width="fill_parent"
+				       	android:layout_height="wrap_content"
+				       	android:text="CHANGE" />
+                     
+               </LinearLayout>
+
+		  	 	<LinearLayout
+		       	android:id="@+id/MNC"
+			 	android:layout_width="wrap_content"
+			  	android:layout_height="wrap_content"
+			  	android:orientation="horizontal">
+                    
+                    <TextView
+     				   android:id="@+id/TVMNC"
+     				   android:layout_width="wrap_content"
+     				   android:layout_height="wrap_content"
+     				   android:text="MNC"
+     				   android:textSize="8sp"/>	  
+    					
+                    <EditText
+			       		android:id="@+id/ETMNC"
+			       		android:layout_width="wrap_content"
+			       		android:layout_height="wrap_content"
+			       		android:textSize="8sp"
+			       		android:text=""  />
+                    
+                     <Button
+				   		android:id="@+id/buttonMNC"
+				       	android:layout_width="fill_parent"
+				       	android:layout_height="wrap_content"
+				       	android:text="CHANGE" />
+            
+               </LinearLayout>
+
+		  	 	<LinearLayout
+		       	android:id="@+id/NTC"
+			 	android:layout_width="wrap_content"
+			  	android:layout_height="wrap_content"
+			  	android:orientation="horizontal">
+                     
+                    <TextView
+     				   android:id="@+id/TVNTC"
+     				   android:layout_width="wrap_content"
+     				   android:layout_height="wrap_content"
+     				   android:text="NTC"
+     				   android:textSize="8sp"/>	  
+    					
+                    <EditText
+			       		android:id="@+id/ETNTC"
+			       		android:layout_width="wrap_content"
+			       		android:layout_height="wrap_content"
+			       		android:textSize="8sp"
+			       		android:text=""/>
+                    
+                     <Button
+				   		android:id="@+id/buttonNTC"
+				       	android:layout_width="fill_parent"
+				       	android:layout_height="wrap_content"
+				       	android:text="CHANGE" />
+            
+               </LinearLayout>
+               
+               	<Button
+			   		android:id="@+id/buttonINSERT"
+			       	android:layout_width="fill_parent"
+			       	android:layout_height="wrap_content"
+			       	android:text="INSERT LEAF" />
+               		
+          		<TextView
+				     android:id="@+id/TVINSERT"
+			        android:layout_width="fill_parent"
+			        android:layout_height="wrap_content"
+			        android:text="resultat insertion"/>
+    
+	 	  </LinearLayout>
+	 	  
+          <LinearLayout
+	       	android:id="@+id/mesphy"
+		 	android:layout_width="wrap_content"
+		  	android:layout_height="fill_parent"
+		  	android:orientation="vertical">
+		  	 
+              <TextView
+     			android:id="@+id/TVmesphy"
+     		   	android:layout_width="wrap_content"
+     		  	android:layout_height="wrap_content"
+     			android:text="PHYSICAL MEASURE"
+     			android:textSize="8sp"/>	 
+    				
+			  		
+			 <LinearLayout
+		     	android:id="@+id/LONG"
+			 	android:layout_width="wrap_content"
+			  	android:layout_height="wrap_content"
+			  	android:orientation="horizontal">
+                    
+			  	 	<TextView
+     				   	android:id="@+id/TVLONG"
+     				   	android:layout_width="wrap_content"
+     				   	android:layout_height="wrap_content"
+     				   	android:text="LONGITUDE"
+     				   	android:textSize="8sp"/>	  
+    					
+                    <EditText
+			       		android:id="@+id/ETLONG"
+			       		android:layout_width="wrap_content"
+			       		android:layout_height="wrap_content"
+			       		android:textSize="8sp"
+			       		android:text="" />
+                        
+			</LinearLayout>
+			  	 	
+		 	<LinearLayout
+			   	android:id="@+id/LAT"
+			 	android:layout_width="wrap_content"
+			  	android:layout_height="wrap_content"
+				android:orientation="horizontal">
+                    
+			 		<TextView
+     				   	android:id="@+id/TVLAT"
+     				   	android:layout_width="wrap_content"
+     				   	android:layout_height="wrap_content"
+     				   	android:text="LATITUDE"
+     				   	android:textSize="8sp"/>	  
+    					
+                    <EditText
+			       		android:id="@+id/ETLAT"
+			       		android:layout_width="wrap_content"
+			       		android:layout_height="wrap_content"
+			       		android:textSize="8sp"
+			       		android:text=""  />
+                        
+			</LinearLayout>
+			  	 	
+			<LinearLayout
+				android:id="@+id/CELL"
+			 	android:layout_width="wrap_content"
+			  	android:layout_height="wrap_content"
+				android:orientation="horizontal">
+                    
+			  	 	<CheckBox
+     				   	android:id="@+id/CBCELL"
+     				   	android:layout_width="wrap_content"
+     				   	android:layout_height="wrap_content"
+     				   	android:text="CELL ID"
+     				   	android:textSize="8sp"/>	  
+    					
+                    <EditText
+			       		android:id="@+id/ETCELL"
+			       		android:layout_width="wrap_content"
+			       		android:layout_height="wrap_content"
+			       		android:textSize="8sp"
+			       		android:text=""  />
+                        
+			</LinearLayout>
+					
+			<LinearLayout
+				android:id="@+id/SS"
+			 	android:layout_width="wrap_content"
+			  	android:layout_height="wrap_content"
+				android:orientation="horizontal">
+                    
+			  	 	<CheckBox
+     				   	android:id="@+id/CBSS"
+     				   	android:layout_width="wrap_content"
+     				   	android:layout_height="wrap_content"
+     				   	android:text="SIGNAL STRENGH"
+     				   	android:textSize="8sp"/>	  
+    					
+                    <EditText
+			       		android:id="@+id/ETSS"
+			       		android:layout_width="wrap_content"
+			       		android:layout_height="wrap_content"
+			       		android:textSize="8sp"
+			       		android:text=""  />
+                        
+			 </LinearLayout>
+			  	 	
+			 <LinearLayout
+			       	android:id="@+id/CALL"
+			 		android:layout_width="wrap_content"
+			  		android:layout_height="wrap_content"
+				  	android:orientation="horizontal">
+                    
+					<CheckBox
+     				   	android:id="@+id/CBCALL"
+     				   	android:layout_width="wrap_content"
+     				   	android:layout_height="wrap_content"
+     				   	android:text="CALL STATE"
+     				   	android:textSize="8sp"/>	  
+    					
+                    <EditText
+			       		android:id="@+id/ETCALL"
+			       		android:layout_width="wrap_content"
+			       		android:layout_height="wrap_content"
+			       		android:textSize="8sp"
+			       		android:text=""  />
+                        
+			 </LinearLayout>
+			  	 	
+		  	<LinearLayout
+			 	android:id="@+id/UPLOAD"
+			 	android:layout_width="wrap_content"
+			  	android:layout_height="wrap_content"
+				android:orientation="horizontal">
+                    
+			  	 	<CheckBox
+     				   	android:id="@+id/CBUPLOAD"
+     				   	android:layout_width="wrap_content"
+     				   	android:layout_height="wrap_content"
+     				   	android:text="UP YIELD"
+     				   	android:textSize="8sp"/>	  
+    					
+                    <EditText
+			       		android:id="@+id/ETUPLOAD"
+			       		android:layout_width="wrap_content"
+			       		android:layout_height="wrap_content"
+			       		android:textSize="8sp"
+			       		android:text=""  />
+                        
+			</LinearLayout>
+		
+			<LinearLayout
+			       	android:id="@+id/DOWNLOAD"
+				 	android:layout_width="wrap_content"
+			  		android:layout_height="wrap_content"	
+				  	android:orientation="horizontal">
+                    
+			  	 	<CheckBox
+     				   	android:id="@+id/CBDOWNLOAD"
+     				   	android:layout_width="wrap_content"
+     				   	android:layout_height="wrap_content"
+     				   	android:text="DOWN YIELD"
+     				   	android:textSize="8sp"/>	  
+    					
+                    <EditText
+			       		android:id="@+id/ETDOWNLOAD"
+			       		android:layout_width="wrap_content"
+			       		android:layout_height="wrap_content"
+			       		android:textSize="8sp"
+			       		android:text=""  />
+                        
+			</LinearLayout>
+			  	 	  	 			  	 	
+         </LinearLayout>    
               
-          </TableRow>
-          
-  
-         </TableLayout>
+      </LinearLayout>
+     
      <!--  
         <TextView
         android:id="@+id/TV2"
@@ -186,12 +374,13 @@
     	/>
       
         -->
+         
        <LinearLayout 	 
            android:id="@+id/cb"
 	 	 	android:layout_width="fill_parent"
 	  		android:layout_height="wrap_content"
 	  		android:orientation="horizontal"
-	  		android:layout_below="@id/bdd" 
+	  		android:layout_below="@id/feuille" 
           >
           
                     <TextView
@@ -201,6 +390,8 @@
      				   android:text="protocole"
      				   android:textSize="10sp"
     				/>
+                    
+                    
           
           
           <CheckBox 

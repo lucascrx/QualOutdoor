@@ -31,32 +31,52 @@ public class MainActivity extends Activity implements OnTaskCompleted {
 	//appartenant à des classes différentes auront besoin d'acceder ou bien à l'activité
 	//ou bien à l'ojet OnTaskCompleted
 	static Activity thisActivity = null;
+	//Connector qui fera le lien avec la base de donnée
+	private SQLConnector connecteur;
+	//Measure Contexte qui permet de surveiller l'évolution du contexte
+	private MeasureContext contexte;
 	
 	/*On déclare en variable globale de classe les poignées agissants sur des vues car
 	 * elles seront utilisées aussi par les sous classes*/
 	EditText filename = null;//poignée avec laquelle on recupere le nom du fichier
 	EditText filecontent = null;//poignée avec laquelle on recupere le contenu du fichier
+	
+	EditText mcc = null;//poignée avec laquelle on recupere le MCC specifié
+	EditText mnc = null;//poignée avec laquelle on recupere le MNC specifié
+	EditText ntc = null;//poignée avec laquelle on recuper le NTC specifié
+	
+	Button boutonMCC = null;//poignée permettant d'avoir le controle sur le changement de MCC
+	Button boutonMNC = null;//poignée permettant d'avoir le controle sur le changement de MNC
+	Button boutonNTC = null;//poignée permettant d'avoir le controle sur le changement de NTC
+	
+	TextView lat = null;//poignée qui permet de recuperer la latitude indiquée
+	TextView lng = null;//poignée qui permet de recuperer la long indiquée
+	
+	CheckBox cbCellid = null;//poignée qui permet de savoir si on releve le numero de cellule
+	TextView cellid = null;//poignée qui permet de recuperer le numero de cellule
+	CheckBox cbSignalStrengh = null;//poignée qui permet de savoir si on releve la force du signal
+	TextView signalStrengh = null;//poignée qui permet de recuperer la force du signal
+	CheckBox cbCall = null;//poignée qui permet de savoir si on releve l'état du test call test call
+	TextView call = null;//poignée qui permet de recuperer l'état du test call
+	CheckBox cbUpload = null;//poignée qui permet de savoir si on releve le debit montant
+	TextView upload = null;//poignée qui permet de recuperer le debit montant
+	CheckBox cbDownload = null;//poignée qui permet de savoir si on releve le debit descendant
+	TextView download = null;//poignée qui permet de recuperer le debit descendant
+	
+	Button insert = null;//poignée qui permetra d'avoir le controle sur le bouton d'insertion dans la bdd
+	TextView insertState = null;//poignée qui permet d'afficher l'état de l'insertion d'un mesure dans la bdd
+	
+	
 	CheckBox cbHttp = null;//poignée qui permet de savoir si l'option envoi en http est choisie
 	CheckBox cbFtp = null;//poignée qui permet de savoir si l'option envoi en ftp est choisie
 	CheckBox cbMail = null;//poignée qui permet de savoir si l'option envoi par mail est choisie
 	TextView tvHttp = null;//poignée qui permet d'afficher le resultat du transfert http
 	TextView tvFtp = null;//poignée qui permet d'afficher le resultat du transfert ftp
 	TextView tvMail = null;//poignée qui permet d'afficher le resultat du transfert mail
-	Button bouton = null;//poignée qui permetra d'avoir le controle sur le bouton d'envoi
-	Button boutonbdd = null;//poignée qui permetra d'avoir le controle sur le bouton de création de la bdd
 	TextView destmail = null;//poignée qui permet d'avoir l'adresse mail destination
 	
-	//POIGNEE ET WIDGETS RELATIF A LA BASE DONNEE
-	
-	TextView dbpanel;//poignee qui permet d'avoir le controle sur le textview affichiant l'état de la création de la bdd
-	//Ci dessous les poignées permettant de recuperer les valeurs inscrites dans la bdd
-	//premiere ligne
-	TextView num10 = null ;TextView num11 = null ;TextView num12 = null ;TextView num13 = null ;
-    //deuxieme ligne
-	TextView num20 = null ;TextView num21 = null ;TextView num22 = null ;TextView num23 = null ;
-	//troisièe ligne
-	TextView num30 = null ;TextView num31 = null ;TextView num32 = null ;TextView num33 = null ;
-	
+	Button bouton = null;//poignée qui permetra d'avoir le controle sur le bouton d'envoi
+
 	//input stream engendré par la lecture de la base de donnée:
 	InputStream dbstream=null;
 	
@@ -70,85 +90,232 @@ public class MainActivity extends Activity implements OnTaskCompleted {
         thisActivity=this;
         
         //on récupère les éléments du layout qui nous interresse
+        
+        lng = (TextView)findViewById(R.id.ETLONG);
+        lat = (TextView)findViewById(R.id.ETLAT);
+        
+        
+        mcc = (EditText)findViewById(R.id.ETMCC);
+        boutonMCC = (Button)findViewById(R.id.buttonMCC);
+        mnc = (EditText)findViewById(R.id.ETMNC);
+        boutonMNC = (Button)findViewById(R.id.buttonMNC);
+        ntc = (EditText)findViewById(R.id.ETNTC);
+        boutonNTC = (Button)findViewById(R.id.buttonNTC);
+        
+        
+        cbCellid = (CheckBox)findViewById(R.id.CBCELL);
+        cellid = (EditText)findViewById(R.id.ETCELL);
+        cbSignalStrengh = (CheckBox)findViewById(R.id.CBSS);
+        signalStrengh = (EditText)findViewById(R.id.ETSS);
+        cbCall = (CheckBox)findViewById(R.id.CBCALL);
+        call = (EditText)findViewById(R.id.ETCALL);
+        cbUpload= (CheckBox)findViewById(R.id.CBUPLOAD);
+        upload = (EditText)findViewById(R.id.ETUPLOAD);
+        cbDownload = (CheckBox)findViewById(R.id.CBDOWNLOAD);
+        download = (EditText)findViewById(R.id.ETDOWNLOAD);
+        
+        insert = (Button)findViewById(R.id.buttonINSERT);
+        insertState = (TextView)findViewById(R.id.TVINSERT);
+        
         bouton = (Button)findViewById(R.id.button);
         tvHttp = (TextView)findViewById(R.id.TVhttp);
         tvFtp = (TextView)findViewById(R.id.TVftp);    
         cbHttp = (CheckBox)findViewById(R.id.cbhttp);
         cbFtp = (CheckBox)findViewById(R.id.cbftp);
-     //   filename = (EditText)findViewById(R.id.filename);
-     //   filecontent = (EditText)findViewById(R.id.filecontent);
+  
+
         
         tvMail = (TextView)findViewById(R.id.TVmail);    
         cbMail = (CheckBox)findViewById(R.id.cbmail);
         destmail = (EditText)findViewById(R.id.targetmail);
         
-        //INITIALISATION DE LA BASE DE DONNEE:
-        dbpanel = (TextView)findViewById(R.id.bddprinter);
-        boutonbdd = (Button)findViewById(R.id.buttonbdd);
-        num10 = (TextView)findViewById(R.id.v10); num11 = (TextView)findViewById(R.id.v11); num12 = (TextView)findViewById(R.id.v12) ; num13 = (TextView)findViewById(R.id.v13);
-        num20 = (TextView)findViewById(R.id.v20); num21 = (TextView)findViewById(R.id.v21); num22 = (TextView)findViewById(R.id.v22) ; num23 = (TextView)findViewById(R.id.v23);
-        num30 = (TextView)findViewById(R.id.v30); num31 = (TextView)findViewById(R.id.v31); num32 = (TextView)findViewById(R.id.v32) ; num33 = (TextView)findViewById(R.id.v33);
+        //INITIALISATION DE LA BASE DE DONNEES
+        try{
+	        this.connecteur = new SQLConnector(thisActivity);//on instancie un nouveau connecteur ce qui provoque la creation d'un createur de bdd
+	        this.connecteur.open();//la bdd est generée à partir du créateur
+        }catch(DataBaseException e){
+        	Toast toast = Toast.makeText(getApplicationContext(), "can't initialize SQLConnector : "+e.toString(), Toast.LENGTH_SHORT);
+			toast.show();
+        }
+        
+        //INITIALISATION DU CONTEXTE
+        
+        this.contexte = new MeasureContext();
+        
+        //INITIALISATION DES BOUTONS SIMULANT LES CHANGEMENTS DE PARAMETRE DU CONTEXTE
+        
+        //changement de MCC
+        this.boutonMCC.setOnClickListener(new View.OnClickListener() {
+  	      @Override
+  	      public void onClick(View v) {
+  	    	  //on releve la valeur insérée pour le mcc
+  	    	  String mess = mcc.getText().toString();
+  	    	  if(mess.equals("")){//controle de la valeur
+  	        	Toast toast = Toast.makeText(getApplicationContext(), "please complete MCC field", Toast.LENGTH_SHORT);
+  				toast.show();
+  	    	  }else{//mise a jour du curseur
+  	    		  int newMCC = Integer.parseInt(mess);
+  	    		Log.d("CONTEXT DEBUG","MCC"+newMCC);
+  	    		  contexte.updateMCC(newMCC);
+    	    		Toast toast = Toast.makeText(getApplicationContext(), "New MCC : context has changed", Toast.LENGTH_SHORT);
+      				toast.show();
+  	    	  }
+  	        
+  	      }
+  	    });
+
+        //changement de MNC
+        this.boutonMNC.setOnClickListener(new View.OnClickListener() {
+  	      @Override
+  	      public void onClick(View v) {
+  	    	  //on releve la valeur insérée pour le mcc
+  	    	  String mess = mnc.getText().toString();
+  	    	  if(mess.equals("")){//controle de la valeur
+  	        	Toast toast = Toast.makeText(getApplicationContext(), "please complete MNC field", Toast.LENGTH_SHORT);
+  				toast.show();
+  	    	  }else{//mise a jour du curseur
+  	    		  int newMNC = Integer.parseInt(mess);
+  	    		  Log.d("CONTEXT DEBUG","MNC"+newMNC);
+  	    		  contexte.updateMNC(newMNC);
+    	    		Toast toast = Toast.makeText(getApplicationContext(), "New MNC : context has changed", Toast.LENGTH_SHORT);
+      				toast.show();
+  	    	  }  
+  	      }
+  	    });
+        
+        //changement de NTC
+        this.boutonNTC.setOnClickListener(new View.OnClickListener() {
+  	      @Override
+  	      public void onClick(View v) {
+  	    	  //on releve la valeur insérée pour le mcc
+  	    	  String mess = ntc.getText().toString();
+  	    	  if(mess.equals("")){//controle de la valeur
+  	        	Toast toast = Toast.makeText(getApplicationContext(), "please complete NTC field", Toast.LENGTH_SHORT);
+  				toast.show();
+  	    	  }else{//mise a jour du curseur
+  	    		  int newNTC = Integer.parseInt(mess);
+  	    		Log.d("CONTEXT DEBUG","NTC"+newNTC);
+  	    		  contexte.updateNTC(newNTC);
+  	    		Toast toast = Toast.makeText(getApplicationContext(), "New NTC : context has changed", Toast.LENGTH_SHORT);
+  				toast.show();
+  	    	  }  	        
+  	      }
+  	    });
         
         
-    	boutonbdd.setOnClickListener(new View.OnClickListener() {
+        
+        
+        /*
+         * Action a executer pour inserer une mesure dans la bdd
+         */
+    	this.insert.setOnClickListener(new View.OnClickListener() {
+    		//if(context.)
     	      @Override
     	      public void onClick(View v) {
-    	    	//LA PREMIERE CHOSE A FAIRE EST DE REMPLIR LA BASE DE DONNEES AVEC LES CHAMPS FOURNIS
+    	    	  Log.d("DEBUG CLICK", "1");
+    	    	  //on récupere les valeurs qui sont remontés par la mesure
+    	    	  ArrayList<String> fields = new ArrayList<String>();
+    	    	  ArrayList<Number> values = new ArrayList<Number>();
+    	    	  //ON RECUPERE LAT ET LNG
+    	    	  Log.d("DEBUG CLICK", "101");
+    	    	  String lngTemp = lng.getText().toString(); 
+    	    	  Log.d("DEBUG CLICK", "102");
+    	    	  if(lngTemp.equals("")){
+	    	    		Toast toast = Toast.makeText(getApplicationContext(), "LONGITUDE field is empty!", Toast.LENGTH_SHORT);
+	      				toast.show();
+    	    	  }else{
+    	    		  Log.d("DEBUG CLICK", "103");
+    	    		  fields.add("lng");
+    	    		  Log.d("DEBUG CLICK", "104");
+    	    		  values.add(Long.parseLong(lngTemp));
+    	    		  Log.d("DEBUG CLICK", "11");
+    	    	  }
     	    	  
-    	    	  dbpanel.setText("from wigdet to csv file via bdd:");//initialisation du panel
-    	    	  
-    	    	  //on initialise donc la bdd
-    	    	 //poignée sur l'instance qui transfere nos instructions sur la bdd
-    	    	 SQLConnector connecteur = new SQLConnector(thisActivity);//on instancie un nouveau connecteur ce qui provoque la creation d'un createur de bdd
-    	          connecteur.open();//la bdd est generée à partir du créateur
-  	    		
-    	          
-  	    		//IL FAUDRAIT VERIFIER QUE TOUS LES CHAMPS DE LA BASE DE DONNEE SONT NON NULL
-  	    		
-    	    	try{
+    	    	  String latTemp = lat.getText().toString();
+    	    	  if(latTemp.equals("")){
+	    	    		Toast toast = Toast.makeText(getApplicationContext(), "LATITUDE field is empty!", Toast.LENGTH_SHORT);
+	      				toast.show();
+    	    	  }else{
+    	    		  fields.add("lat");
+    	    		  values.add(Long.parseLong(latTemp));
+    	    		  Log.d("DEBUG CLICK", "12");
+    	    	  }
     	    	  
     	    	  
-  	    		//on récupere les entiers entrés
-  	    		int i10 = Integer.parseInt(num10.getText().toString());int i11 = Integer.parseInt(num11.getText().toString());int i12 = Integer.parseInt(num12.getText().toString());int i13 = Integer.parseInt(num13.getText().toString());
-  	    		int i20 = Integer.parseInt(num20.getText().toString());int i21 = Integer.parseInt(num21.getText().toString());int i22 = Integer.parseInt(num22.getText().toString());int i23 = Integer.parseInt(num23.getText().toString());
-  	    		int i30 = Integer.parseInt(num30.getText().toString());int i31 = Integer.parseInt(num31.getText().toString());int i32 = Integer.parseInt(num32.getText().toString());int i33 = Integer.parseInt(num33.getText().toString());
-  	    		//on prépare les lignes de la bdd stockées sous forme d'arrayList
-  	    		//premiere ligne
-  	    		ArrayList<Integer> ligne1 = new ArrayList<Integer>();
-  	    		ligne1.add(i10);ligne1.add(i11);ligne1.add(i12);ligne1.add(i13);
-  	    		//deuxieme ligne
-  	    		ArrayList<Integer> ligne2 = new ArrayList<Integer>();
-  	    		ligne2.add(i20);ligne2.add(i21);ligne2.add(i22);ligne2.add(i23);
-  	    		//troisieme ligne
-  	    		ArrayList<Integer> ligne3 = new ArrayList<Integer>();
-  	    		ligne3.add(i30);ligne3.add(i31);ligne3.add(i32);ligne3.add(i33);
-  	    		
-  	    		//insertion des lignes dans la base de données
-  	    		if(connecteur.insertLine(ligne1) != -1){
-  	    			dbpanel.append("insertion ligne 1 ok; ");
-  	    			Log.d("insert L1 ","OK");
-  	    		}
-  	    		if(connecteur.insertLine(ligne2) != -1){
-  	    			dbpanel.append("insertion ligne 2 ok; ");
-  	    			Log.d("insert L2 ","OK");
-  	    		}
-  	    		if(connecteur.insertLine(ligne3) != -1){
-  	    			dbpanel.append("insertion ligne 3 ok; ");
-  	    			Log.d("insert L3 ","OK");
-  	    		}
-  	    		dbpanel.append("insertion terminée; ");
-  	    		
-  	    		//MAINTENANT IL FAUT A PARTIR DE LA BASE DE DONNEES CONSTRUIRE L'INPUT STREAM
-    	    	  
-  	    		dbstream = connecteur.getInputStream();
-  	    		dbpanel.append("Stream généré; "); 
-    	    	  
-    	        connecteur.close();
-    	    	}catch(NumberFormatException e){
-    	    		Toast toast = Toast.makeText(getApplicationContext(), "please complete all fields of the db with numbers", Toast.LENGTH_SHORT);
-	    			toast.show();
-    	    		
-    	    	}
+    	    	  //ON REGARDE CELL ID
+    	    	  if(cbCellid.isChecked()){//on ajoute en fait le nom de la table annexe
+    	    		  String val = cellid.getText().toString();
+    	    		  if(val.equals("")){
+    	    	    		Toast toast = Toast.makeText(getApplicationContext(), "cell ID field is empty!", Toast.LENGTH_SHORT);
+    	      				toast.show();
+    	    		  }else{
+        	    		  	fields.add("table_cell");
+    	    			  	values.add(Integer.parseInt(val));
+    	    			  	Log.d("DEBUG CLICK", "13 ");
+    	    		  }
+    	    	  }
+    	    	  //ON REGARDE Signal Strengh
+    	    	  if(cbSignalStrengh.isChecked()){//on ajoute en fait le nom de la table annexe
+    	    		  String val = signalStrengh.getText().toString();
+    	    		  if(val.equals("")){
+    	    	    		Toast toast = Toast.makeText(getApplicationContext(), "signal strengh field is empty!", Toast.LENGTH_SHORT);
+    	      				toast.show();
+    	    		  }else{
+        	    		  	fields.add("table_ss");
+    	    			  	values.add(Long.parseLong(val));
+    	    		  }
+    	    	  }
+    	    	  //ON REGARDE Call
+    	    	  if(cbCall.isChecked()){//on ajoute en fait le nom de la table annexe
+    	    		  String val = call.getText().toString();
+    	    		  if(val.equals("")){
+    	    	    		Toast toast = Toast.makeText(getApplicationContext(), "call field is empty!", Toast.LENGTH_SHORT);
+    	      				toast.show();
+    	    		  }else{
+    	    			  	fields.add("table_call");
+    	    			  	values.add(Integer.parseInt(val));
+    	    		  }
+    	    	  }
+    	    	  //ON REGARDE Upload
+    	    	  if(cbUpload.isChecked()){//on ajoute en fait le nom de la table annexe
+    	    		  String val = upload.getText().toString();
+    	    		  if(val.equals("")){
+    	    	    		Toast toast = Toast.makeText(getApplicationContext(), "upload field is empty!", Toast.LENGTH_SHORT);
+    	      				toast.show();
+    	    		  }else{
+    	   	    		  	fields.add("table_upload");
+    	    			  	values.add(Long.parseLong(val));
+    	    		  }
+    	    	  }
+    	    	  //ON REGARDE Download
+    	    	  if(cbDownload.isChecked()){//on ajoute en fait le nom de la table annexe
+    	    		  String val = download.getText().toString();
+    	    		  if(val.equals("")){
+    	    	    		Toast toast = Toast.makeText(getApplicationContext(), "download field is empty!", Toast.LENGTH_SHORT);
+    	      				toast.show();
+    	    		  }else{
+        	    		  	fields.add("table_download");
+    	    			  	values.add(Long.parseLong(val));
+    	    		  }
+    	    	  }
+    	    	  Log.d("DEBUG CLICK", "2");
+    	    	  //on remplit la mesure à donner au connecteur
+    	    	  HashMap<String,Number> completeMeasure = new HashMap<String,Number>();
+    	    	  try {
+    	    		 //maintenant que fields et values sont remplis on les passe au contexte qui nous revoie une mesure complete 
+					completeMeasure = contexte.getMeasure(fields, values);
+					Log.d("DEBUG COMPLETE MEASURE",completeMeasure.toString());
+					///IL FAUT TESTER SI COMPLETE MEASURE EST BIEN REMPLIE!!!!!!!!!!!!!!!!!!
+					//on donne maintenant la mesure complete au connecteur afin qu'il remplisse la bdd.
+					Log.d("DEBUG INSERT","0");
+					connecteur.insertMeasure(completeMeasure);
+					Log.d("DEBUG INSERT","1");
+					insertState.setText("leaf inserted in db");
+					
+				} catch (CollectMeasureException e) {
+					Toast toast = Toast.makeText(getApplicationContext(), e.toString(), Toast.LENGTH_SHORT);
+      				toast.show();
+				}
     	        
     	      }
     	    });
