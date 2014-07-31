@@ -1,5 +1,7 @@
 package com.example.projet_qualoutdoor_client;
 
+import java.io.ByteArrayOutputStream;
+import java.io.OutputStream;
 import java.util.HashMap;
 
 /*Classe qui permet un call back des taches asynchrones vers l'activité principale
@@ -16,4 +18,7 @@ public interface OnTaskCompleted {
 	
 	void onTaskCompleted(String protocole,HashMap<String,FileToUpload> filesSended);
 
+	
+	/*Callback pour le générateur de fichier*/
+	void onFileReady(ByteArrayOutputStream file);
 }

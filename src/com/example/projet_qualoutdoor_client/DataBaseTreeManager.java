@@ -1,5 +1,7 @@
 package com.example.projet_qualoutdoor_client;
 
+import java.util.ArrayList;
+
 import android.content.ContentValues;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
@@ -79,7 +81,7 @@ public class DataBaseTreeManager {
 	 * sauf que le manager pointera toujours les bornes du noeud où a eu lieu l'insertion 
 	 * */
 	public void insertLeaf(int ref){
-		/*il faut décaler toutes les bornes d'abscisse supérieur à la Borne max de l'intervalle d'insertion
+		/*il faut décaler vers la droite toutes les bornes d'abscisse supérieur à la Borne max de l'intervalle d'insertion
 		 * pour faire de la place pour l'intervalle à insérer*/
 		String updateQuery1 = "UPDATE "+table.getName()+" SET ls = ls + 2 WHERE ls >= "+this.currentMaxSide+";";
 		String updateQuery2 = "UPDATE "+table.getName()+" SET rs = rs + 2 WHERE rs >= "+this.currentMaxSide+";";
@@ -91,6 +93,26 @@ public class DataBaseTreeManager {
 		//il y a juste à faire une mise a jour de la borne max car cette derniere a été décalée pour permettre l'insertion
 		this.currentMaxSide = this.currentMaxSide +2;
 		//l'autre borne n'a pas changée
+	}
+	
+	/*
+	 * Fonction qui permet de supprimer le noeud courrant : utile pour l'écriture du fichier, le manager sera ensuite replacé
+	 * sur la racine, pas génant car les suppressions sont suivies de focusOn*/
+	public void deleteCurrentNode() throws DataBaseException{
+		int nb = db.delete(table.getName(),"ls = ? AND rs = ?",new String[] {Integer.toString(this.currentMinSide), Integer.toString(this.currentMaxSide) });
+		if(nb!=1){
+			throw new DataBaseException("unicity not preserved!");
+		}else{
+			/*la suppression a bien eu lieu
+			 * il faut décaler vers la gauche toutes les bornes d'abscisse supérieur à la Borne min de l'intervalle d'insertion
+			 * aspirer l'espace créer par la supression de l'intervalle*/
+			String updateQuery1 = "UPDATE "+table.getName()+" SET ls = ls - 2 WHERE ls >= "+this.currentMinSide+";";
+			String updateQuery2 = "UPDATE "+table.getName()+" SET rs = rs - 2 WHERE rs >= "+this.currentMinSide+";";
+			db.execSQL(updateQuery1);
+			db.execSQL(updateQuery2);
+			//on place le curseur en root
+			this.reset();//ATTENTION IL FAUT ACCOMPAGNER CE RESET D'UN RESET DU OLD CONTEXT ASSOCIE
+		}
 	}
 	
 	/*fonction qui permet devoir si un noeud existe et s'il n'existe pas, elle le créée*/
@@ -146,8 +168,67 @@ public class DataBaseTreeManager {
 	       
 	}
 	
+	/*
+	 * fonction qui permet de placer le manager sur un intervalle désiré, utile pour le manager écrivain
+	 * */
+	public void focusOn(int bordMin, int bordMax){
+		this.currentMinSide=bordMin;
+		this.currentMaxSide=bordMax;
+	}
 	
+	/*
+	 * renvoie le bord max de l'intervalle pointé
+	 * */
+	public int getMaxSide(){
+		return this.currentMaxSide;
+	}
 	
+	/*
+	 * renvoie le bord Min de l'intervalle pointé
+	 * */
+	public int getMinSide(){
+		return this.currentMinSide;
+	}
+	
+	/*Renvoie la référence de l'intervalle pointé
+	 * */
+	public int getCurrentReference() throws DataBaseException{
+		int ref;
+		String selectQuery = "SELECT VALUE FROM "+table.getName()+" WHERE ls = ? AND rs = ?";
+		Cursor c = db.rawQuery(selectQuery, new String[] {Integer.toString(this.currentMinSide), Integer.toString(this.currentMaxSide) });
+		if (c.moveToFirst()) {
+            ref = c.getInt(0);
+		}else{
+			throw new DataBaseException("Reference is unreachable ! ");
+		}
+		return ref;
+		
+	}
+	
+	/*
+	 * Renvoi la liste des intervalles correspondants à tous les noeuds fils de l'intervalle pointé
+	 */
+	public ArrayList<int[]> getDirectChildSides() throws DataBaseException{
+		ArrayList<int[]> intervals = new ArrayList<int[]>();
+		int bordMax;
+		int refSide = this.currentMinSide+1;//abscisse de reference qui va pointer sur les bord minimum de tous les fils
+		//ici on pointe sur le bord min du premier fils (s'il y en a un)
+		while(refSide != this.currentMaxSide){//tant que l'on a pas atteint le bord max du noeud
+			//on récupère la borne droite de l'intervalle associé à la borne gauche récupérée
+			String selectQuery = "SELECT rs FROM "+table.getName()+" WHERE ls = ?";
+			Cursor c = db.rawQuery(selectQuery, new String[] {Integer.toString(refSide)});
+			if (c.moveToFirst()) {
+				bordMax = c.getInt(0);
+				//on a donc un intervalle correspondant à un fils, on l'ajoute à la liste
+				intervals.add(new int[] {refSide,bordMax});
+				//on met a jour refSide en le faisant pointer sur le bord min du voisin
+				refSide = bordMax+1; 
+			}else{
+				throw new DataBaseException("can't locate children ! ");
+			}	
+		}
+		return intervals;
+	}
 	
 	
 	

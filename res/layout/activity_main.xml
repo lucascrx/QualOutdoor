@@ -37,7 +37,7 @@
      				   android:textSize="8sp"/>	  
     					
                     <TextView
-			       		android:id="@+id/ETGROUP"
+			       		android:id="@+id/IDGROUP"
 			       		android:layout_width="wrap_content"
 			       		android:layout_height="wrap_content"
 			       		android:textSize="8sp"
@@ -59,7 +59,7 @@
      				   android:textSize="8sp"/>	  
     					
                     <TextView
-			       		android:id="@+id/ETUSER"
+			       		android:id="@+id/IDUSER"
 			       		android:layout_width="wrap_content"
 			       		android:layout_height="wrap_content"
 			       		android:textSize="8sp"

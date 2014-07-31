@@ -103,6 +103,7 @@ public class DataSendingManager extends AsyncTask<Void, Void, String> {
     /* Fonction executée après la fonction d'arrière plan, elle récupère la réponse du serveur
      * et l'affiche dans la vue avec laquelle le dataSendingManager a été créé.
      */
+    @Override
     protected void onPostExecute(String result) {
     	//on affiche le résultat de l'opération dans la vue
     	this.printer.setText(result);
@@ -113,6 +114,7 @@ public class DataSendingManager extends AsyncTask<Void, Void, String> {
     /*Fonction éxécutée avant la fonction d'arrière plan, elle permet juste d'initialiser ou de ré-initialiser
      * les affichages
      * */
+    @Override
     protected void onPreExecute() {
     	//CONFIGURATION DE LA BARRE DE PROGRES
     	progressDialog= ProgressDialog.show((Context)this.callback, "SENDING DATA","USING "+this.protocole+" PROTOCOLE", true);

@@ -23,22 +23,21 @@ public class SQLConnector {
 	private SQLiteDatabase db;//base de donnée sur laquelle agir.
 	private SQLDataBaseCreator dbCreator;//createur de la base de donnée
 	
-	private DataBaseTreeManager manager;//manager de l'arbre de la bdd
+	private DataBaseTreeManager manager;//manager de l'arbre de la bdd:MANAGER D'INSERTION
+	
 	
 	//le connector garde en memoire les derniers MCC,MNC,NTC,Metric accèdés afin d'indiquer au
 	//manager comment se déplacer dans l'arbre pour une nouvelle insertion.
-	//ce quadruplet represe la position courante du manager après insertion
-	private int lastMCC;
-	private int lastMNC;
-	private int lastNTC;
-	private int lastMetric;
+	//ce quadruplet represe la position courante du manager après insertion, il est stocké dans un contexte
+	
+	private MeasureContext oldContext;
 	
 	
 	
 	//le constructeur engendre un nouveau createur de bdd
 	public SQLConnector(Context context) throws DataBaseException{
 		this.dbCreator = new SQLDataBaseCreator(context);
-		
+		this.oldContext = new MeasureContext(4);
 	}
 	
 	//open() permet de produire la base de donnée à partir du constructeur
@@ -58,7 +57,53 @@ public class SQLConnector {
 	
 	
 	/*fonction qui permet d'inserer une ligne correspondant à une mesure dans la table de reference*/
-	public void insertReference(int MCC, int MNC, int NTC,int metric, int ref ){
+	public void insertReference(MeasureContext newContext, int ref) throws CollectMeasureException, DataBaseException{
+		//verification de la cohérence des curseurs
+		if(this.oldContext.getlength()!=newContext.getlength() || this.oldContext.getCursor()!=newContext.getCursor()){
+			throw new CollectMeasureException("new context doesn't match with old one");
+		}
+		//si les noeuds sont identiques
+		if(newContext.getStage(newContext.getCursor())==this.oldContext.getStage(this.oldContext.getCursor())){
+			Log.d("****************DEBUG REFERENCE", "Noeuds identiques : "+newContext.getStage(newContext.getCursor()));
+			//si on est à la fin on insere la feuille
+			if(this.oldContext.isAtEnd()){
+				Log.d("****************DEBUG REFERENCE", "on  insere la feuille "+ref);
+				this.manager.insertLeaf(ref);
+			}else{//sinon on compare les noeuds fils
+				Log.d("****************DEBUG REFERENCE", "on  passe au noeud FILS");
+				this.oldContext.moveToChild();//on prend le fils
+				newContext.moveToChild();//on prend le fils
+				insertReference(newContext,ref);//on rappelle la fonction sur les fils
+			}
+		}else{//si les noeuds ne sont pas identiques
+			//on determine la distance du noeud père du noeud de "conflit" à la fin de l'abre pour faire remonter le
+			//manager jusqu'à lui
+			Log.d("****************DEBUG REFERENCE", "Noeuds différents : new : "+newContext.getStage(newContext.getCursor())+" old :"+this.oldContext.getStage(this.oldContext.getCursor()));
+			int distFatherLeaf = this.oldContext.getlength()-this.oldContext.getCursor();
+			//on fait remonter le manager
+			for(int i=0;i<distFatherLeaf;i++){
+				Log.d("****************DEBUG REFERENCE","on remonte le manager");
+				this.manager.getFather();
+			}
+			//on le fait maintenant redescendre en suivant le bon chemin et en mettant à jour oldContext
+			for(int u=0;u<distFatherLeaf;u++){
+				Log.d("****************DEBUG REFERENCE","on descend le manager vers "+newContext.getStage(newContext.getCursor()) );
+				//on se dirige vers le bon fils
+				manager.findOrCreate(newContext.getStage(newContext.getCursor()));
+				//mise a jour du vieux cuseur
+				this.oldContext.set(this.oldContext.getCursor(),newContext.getStage(newContext.getCursor()));
+				//on descend d'un étage
+				this.oldContext.moveToChild();
+				newContext.moveToChild();
+			}
+			Log.d("****************DEBUG REFERENCE","FIN DE LA DESCENTE : "+newContext.getStage(newContext.getCursor())  );
+			//à la fin on est arrivé au bout de l'arbre : on peut inserer la feuille:
+			this.manager.insertLeaf(ref);
+		}
+		
+	}
+	
+	/*public void insertReference(int MCC, int MNC, int NTC,int metric, int ref ){
 		try{
 			Log.d("DEBUG **** TREE","MCC_OLD : "+this.lastMCC+" MCC_NEW : "+MCC);
 			Log.d("DEBUG **** TREE","MNC_OLD : "+this.lastMNC+" MNC_NEW : "+MNC);
@@ -124,14 +169,17 @@ public class SQLConnector {
 		}catch(DataBaseException e){
 			e.printStackTrace();
 		}
-	}
+	}*/
+	
+	
+	
 	
 	/*Methode qui insere une mesure dans la table des mesures, elle renvoie l'identifiant de la
 	 * ligne insérée ou -1 en cas de probleme*/
 	public int insertData(long lat, long lng,String data){
 		int id = -1;
 		try{//on prépare la requete d'insertion, la date est générée par SQL
-			String insertQuery = "INSERT INTO "+this.dbCreator.getTableMeasure().getName()+" (DATE , LAT , LNG, DATA) VALUES ( CURRENT_TIMESTAMP ,"+lat+","+lng+", '"+data+"' );";
+			String insertQuery = "INSERT INTO "+this.dbCreator.getTableMeasure().getName()+" (DATE , LAT , LNG, DATA) VALUES (CURRENT_TIMESTAMP ,"+lat+","+lng+", '"+data+"' );";
 			db.execSQL(insertQuery);//Execution de la requete d'insertion
 			Cursor c = db.rawQuery("SELECT last_insert_rowid()", null);//on récupère l'ID du dernier élément inséré
 			if(c.moveToFirst()){//si on retrouve bien la ligne insérée on retrouve son ID
@@ -155,35 +203,39 @@ public class SQLConnector {
 	 * 
 	 * 
 	 */
-	public void insertMeasure(HashMap<String,Number> contextList, HashMap<Integer,String> dataList){
-		int MCC = (Integer) contextList.get("MCC");
-		int MNC = (Integer) contextList.get("MNC");
-		int NTC = (Integer) contextList.get("NTC");
-		long lng = (Long) contextList.get("lng");
-		long lat = (Long) contextList.get("lat");
-
-		//INSERTIONS SUCESSIVES DANS LA TABLE DE MESURES
-		//CHAQUE INSERTION DE DATA EST SUIVIE PAR UNE INSERTION ASSOCIEE DANS LA TABLE DE REFERENCE
-		int ref;
-		for(int dataType : dataList.keySet()){
-			ref = this.insertData(lat,lng,dataList.get(dataType));//on insert la data dans la table de mesure
-			this.insertReference(MCC, MNC, NTC, dataType, ref);//on recupere l'id donnée pour referencer la data dans la table de reference
+	public void insertMeasure(MeasureContext newContext, HashMap<Integer,String> dataList, long lat, long lng){
+		
+		try{
+			//INSERTIONS SUCESSIVES DANS LA TABLE DE MESURES
+			//CHAQUE INSERTION DE DATA EST SUIVIE PAR UNE INSERTION ASSOCIEE DANS LA TABLE DE REFERENCE
+			int ref;
+			for(int dataType : dataList.keySet()){//pour chaque metrique on termine d'initilaliser le nvx Contexte
+				newContext.set(newContext.getlength()-1, dataType);//on met la métrique à la derniere case du contexte
+				this.oldContext.resetCursor();
+				newContext.resetCursor();
+				//le contexte est pret
+				ref = this.insertData(lat,lng,dataList.get(dataType));//on insert la data dans la table de mesure
+				this.insertReference(newContext,ref);//on recupere l'id donnée pour referencer la data dans la table de reference
+			}
+			
+			//TEST
+			
+			String select = "SELECT * FROM "+this.dbCreator.getTableReference().getName() ;
+			Cursor c = this.db.rawQuery(select,null);
+			String str = DatabaseUtils.dumpCursorToString(c);
+			Log.d("DEBUG REFERENCE",str);
+			c.close();
+			
+			String select2 = "SELECT * FROM "+this.dbCreator.getTableMeasure().getName();
+			Cursor c2 = this.db.rawQuery(select2,null);
+			String str2 = DatabaseUtils.dumpCursorToString(c2);
+			Log.d("DEBUG MEASURE",str2);
+			c2.close();
+		}catch(CollectMeasureException e){
+			e.printStackTrace();
+		}catch(DataBaseException e){
+			e.printStackTrace();
 		}
-		
-		//TEST
-		
-		String select = "SELECT * FROM "+this.dbCreator.getTableReference().getName() ;
-		Cursor c = this.db.rawQuery(select,null);
-		String str = DatabaseUtils.dumpCursorToString(c);
-		Log.d("DEBUG REFERENCE",str);
-		c.close();
-		
-		String select2 = "SELECT * FROM "+this.dbCreator.getTableMeasure().getName();
-		Cursor c2 = this.db.rawQuery(select2,null);
-		String str2 = DatabaseUtils.dumpCursorToString(c2);
-		Log.d("DEBUG MEASURE",str2);
-		c2.close();
-		
 		
 		
 	}
@@ -215,8 +267,56 @@ public class SQLConnector {
 		}
 	}*/
 	
+	/*Fonction  qui permet de retourner les détails d'une feuille précise
+	 * */
+	public ArrayList<String> getLeafDetails(int ref) throws DataBaseException{
+		ArrayList<String> list = new ArrayList<String>();
+		String selectQuery = "SELECT DATE , LAT , LNG , DATA FROM "+this.dbCreator.getTableMeasure().getName()+" WHERE ID = ?";
+		Cursor c = db.rawQuery(selectQuery, new String[] {Integer.toString(ref)});
+		if (c.moveToFirst()) {
+			for(int i=0; i<c.getColumnCount();i++){
+				list.add(c.getString(i));
+			}
+			return list;
+		}else{
+			throw new DataBaseException("can't find leaf ");
+		}
+	}
 	
+	/*Fonction qui retrourne un manager : utile pour le file generator qui en a besoin*/
+	public DataBaseTreeManager prepareManager(){
+		DataBaseTreeManager manager = null;
+		try {
+			manager = new DataBaseTreeManager(this.db,this.dbCreator.getTableReference());
+		} catch (DataBaseException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return manager;
+	}
 	
+	public boolean hasLeaf(){
+		boolean bool;
+		String selectQuery = "SELECT ID FROM "+this.dbCreator.getTableMeasure().getName();
+		Cursor c = db.rawQuery(selectQuery, null);
+		if (c.moveToFirst()) {
+			bool =  true;
+		}else{
+			bool =  false;
+		}
+		c.close();
+		return bool;
+	}
 	
+	public void deleteLeaf(int ref){
+		try{
+			int nb = db.delete(this.dbCreator.getTableMeasure().getName(),"ID = ?",new String[] {Integer.toString(ref) });
+			if(nb!=1){
+				throw new DataBaseException("unicity not preserved!");
+			}
+		}catch(DataBaseException e){
+			e.printStackTrace();
+		}
+	}
 
 }

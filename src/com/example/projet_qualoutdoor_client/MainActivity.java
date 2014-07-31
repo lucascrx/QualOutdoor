@@ -1,7 +1,9 @@
 package com.example.projet_qualoutdoor_client;
 
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.concurrent.ExecutionException;
@@ -34,12 +36,15 @@ public class MainActivity extends Activity implements OnTaskCompleted {
 	//Connector qui fera le lien avec la base de donnée
 	private SQLConnector connecteur;
 	//Measure Contexte qui permet de surveiller l'évolution du contexte
-	private MeasureContext contexte;
+	private MeasureContext newContext;
 	
 	/*On déclare en variable globale de classe les poignées agissants sur des vues car
 	 * elles seront utilisées aussi par les sous classes*/
 	EditText filename = null;//poignée avec laquelle on recupere le nom du fichier
 	EditText filecontent = null;//poignée avec laquelle on recupere le contenu du fichier
+	
+	TextView user = null;//poignee avec laquelle recupere l'id user
+	TextView group = null;//poignée pour récupérer l'id groupe
 	
 	EditText mcc = null;//poignée avec laquelle on recupere le MCC specifié
 	EditText mnc = null;//poignée avec laquelle on recupere le MNC specifié
@@ -91,6 +96,9 @@ public class MainActivity extends Activity implements OnTaskCompleted {
         
         //on récupère les éléments du layout qui nous interresse
         
+        user = (TextView)findViewById(R.id.IDUSER);
+        group = (TextView)findViewById(R.id.IDGROUP);
+        
         lng = (TextView)findViewById(R.id.ETLONG);
         lat = (TextView)findViewById(R.id.ETLAT);
         
@@ -138,9 +146,9 @@ public class MainActivity extends Activity implements OnTaskCompleted {
 			toast.show();
         }
         
-        //INITIALISATION DU CONTEXTE
+        //INITIALISATION DU CONTEXTE : ici la taille de l'arbre sans les extremes (root et feuilles)
         
-        this.contexte = new MeasureContext();
+        this.newContext = new MeasureContext(4);
         
         //INITIALISATION DES BOUTONS SIMULANT LES CHANGEMENTS DE PARAMETRE DU CONTEXTE
         
@@ -157,7 +165,7 @@ public class MainActivity extends Activity implements OnTaskCompleted {
 	  	    	  }else{//mise a jour du curseur
 	  	    		  int newMCC = Integer.parseInt(mess);
 	  	    		Log.d("CONTEXT DEBUG","MCC"+newMCC);
-	  	    		  contexte.updateMCC(newMCC);
+	  	    		  	newContext.set(0,newMCC);
 	    	    		Toast toast = Toast.makeText(getApplicationContext(), "New MCC : context has changed", Toast.LENGTH_SHORT);
 	      				toast.show();
 	  	    	  }
@@ -181,7 +189,7 @@ public class MainActivity extends Activity implements OnTaskCompleted {
 	  	    	  }else{//mise a jour du curseur
 	  	    		  int newMNC = Integer.parseInt(mess);
 	  	    		  Log.d("CONTEXT DEBUG","MNC"+newMNC);
-	  	    		  contexte.updateMNC(newMNC);
+	  	    		  newContext.set(1,newMNC);
 	    	    		Toast toast = Toast.makeText(getApplicationContext(), "New MNC : context has changed", Toast.LENGTH_SHORT);
 	      				toast.show();
 	  	    	  }
@@ -205,7 +213,7 @@ public class MainActivity extends Activity implements OnTaskCompleted {
 	  	    	  }else{//mise a jour du curseur
 	  	    		  int newNTC = Integer.parseInt(mess);
 	  	    		Log.d("CONTEXT DEBUG","NTC"+newNTC);
-	  	    		  contexte.updateNTC(newNTC);
+	  	    		newContext.set(2,newNTC);
 	  	    		Toast toast = Toast.makeText(getApplicationContext(), "New NTC : context has changed", Toast.LENGTH_SHORT);
 	  				toast.show();
 	  	    	  }
@@ -227,7 +235,7 @@ public class MainActivity extends Activity implements OnTaskCompleted {
     	      @Override
     	      public void onClick(View v) {
     	    	  try {
-    	    		  if(contexte.getMCC()==0||contexte.getMNC()==0||contexte.getNTC()==0){
+    	    		  if(!newContext.isCorrectlySet()){//verification de la validité du contexte
     	    			  throw new CollectMeasureException("contexte is not correctly filled!");
     	    		  }
 	    	    	  Log.d("DEBUG CLICK", "1");
@@ -328,14 +336,14 @@ public class MainActivity extends Activity implements OnTaskCompleted {
 	    	    		  i++;
 	    	    	  }
 	    	    	  //hashMap qui rassemble l'ensembles des élements du contexte et les coordonnées GPS
-	    	    	  HashMap<String,Number> contextList = new HashMap<String,Number>();
+	    	    	 // HashMap<String,Number> contextList = new HashMap<String,Number>();
     	    		 //on recupere le contexte actuel
-	    	    	  contextList = contexte.generateNewContext(latValue, lngValue);
-					Log.d("DEBUG CONTEXT",contextList.toString());
+	    	    	//  contextList = contexte.generateNewContext(latValue, lngValue);
+					//Log.d("DEBUG CONTEXT",contextList.toString());
 					Log.d("DEBUG DATA",dataList.toString());
 					//on donne maintenant la mesure complete au connecteur afin qu'il remplisse la bdd.
 					Log.d("DEBUG INSERT","0");
-					connecteur.insertMeasure(contextList,dataList);
+					connecteur.insertMeasure(newContext,dataList,latValue,lngValue);
 					Log.d("DEBUG INSERT","1");
 					insertState.setText("leaf inserted in db");
 					
@@ -353,122 +361,91 @@ public class MainActivity extends Activity implements OnTaskCompleted {
 		bouton.setOnClickListener(new View.OnClickListener() {    
 			//on va definir les paramètres à utiliser pour l'upload dans la fonction onClick
 	    	public void onClick(View v){
-	    		try{
-	    		//on verifie que le fichier à envoyer issu de la bdd existe bien
 	    		
-	    		if(dbstream==null){
-	    			throw new FileToSendException("csv file not created!");
-	    		}
-	    		
-	    		
-	    		/*
-	    		if(filename.getText().length()==0||filecontent.getText().length()==0){
-	    			//getion du cas où un des 2 champs est vide
-	    			Toast toast = Toast.makeText(getApplicationContext(), "please complete all fields", Toast.LENGTH_SHORT);
+	    		//cas ou aucun protocole n'est choisi 
+	    		if(!cbHttp.isChecked() && !cbFtp.isChecked() && !cbMail.isChecked()){
+	    			//on affiche un message à l'utilisateur
+	    			Toast toast = Toast.makeText(getApplicationContext(), "please choose a protocole", Toast.LENGTH_SHORT);
 	    			toast.show();
-	    		}
-	    		else{
-	    		*/
-	    			/*Dans le projet il n'y a pour l'instant besoin que d'envoyer un seul fichier
-		    		 * mais comme ce point n'est pas encore sur on définit une fonction capable de
-		    		 * passer au DataSendingManager une hashMap d'input : paramètres élémentaires et une
-		    		 * hashMap de fichiers*/
-		    		
-		    		/*ATTENTION CHANGEMENT LES INPUT ETANT PROPRE A HTTP IL EST MAINTENANT INCONCEVABLE
-		    		 *DE PLACER A CE NIVEAU DU CODE UNE CARACTERISTIQUE SI SPECIFIQUE A UN PROTOCOLE
-		    		 *D'ENVOI, ON NE GARDE DONC QUE LA HASMAP DE FICHIER ET LES INPUTS SERONT FIXES
-		    		 *DANS LA CLASSE PROPRE A HTTP MAIS DU COUP INNACCESSIBLES PAR L'UTILISATEUR
-		    		 */
+	    		}else{
 	    		
-		    	
-	    		
-	    		//Hashmap d'input élémentaires : si on envoie pas d'input simples, la hashmap sera vide
-		    	//HashMap<String,String> inputToSend = new HashMap<String,String>();
-		    		
-		    		
-		    		//Hashmap de fichiers:: si on envoie pas de fichiers, la hashmap sera vide
-		    		HashMap<String,FileToUpload> filesToSend = new HashMap<String,FileToUpload>();
-		    		
-		    		//ICI ON RECUPERE LES OBJETS A ENVOYER DANS LA REQUETE QUE L'ON PLACE DANS LES HASHMAPS
-		    		
-		    		//dans notre cas il n'y a qu'un seul fichier que l'on récupère avec les poignées précédemment définies
-		    		//on récupère le Nom
-		    		
-		    		//nom généré avec un TIMESTAMP
-		    		String name = "file"+System.currentTimeMillis();//filename.getText().toString();
-		    		//on récupère le contenu...
-		    		//String contentString = filecontent.getText().toString();
-		    		//..que l'on transforme en InputStream
-		    		InputStream content = dbstream;//new ByteArrayInputStream(contentString.getBytes());
-		    		//on construit donc une instance de fileToUpload
-		    		FileToUpload monFichier = new FileToUpload(name,content);
-		    		//on le place dans la hashmap en fixant le nom du champs du formulaire le fichier se rapportera
-		    		//Ce champ a été délibérément fixé en dur et non laissé au choix de l'utilisateur!
-		    		filesToSend.put("uploadedFile", monFichier);
-		    		
-		    		//LES HASHMAPS SONT PRETES ON PREPARE LE DATA SENDING MANAGER
-		    	
-		    		
-		    		//en fonction de l'option d'envoi choisie on fixe les derniers paramètres pour initialiser les
-		    		//data sending manager
-
-		    		
-		    		//CI DESSUS ON NE PEUT CHOISIR QU'UN SEUL PROTOCOLE CAR C'EST UNIQUEMENT LE 
-		    		//PREMIER TRANSFERT A LANCER, SI PLUSIEURS TRANSFERT CHOISIS, ON UTILISERA
-		    		//LA METHODE DE CALLBACK DE FACON A FAIRE CES TRANSFERTS L'UN APRES L'AUTRE
-		    			
-		    			
-		    		//cas ou HTTP est choisi
-		    		if(cbHttp.isChecked()){
-		    			//on fixe l'adresse du serveur http comme adresse cible
-		    			String url = "http://192.168.0.4:8080/upload";
-		    			//on initialise donc le DataSendingManager en lui indiquant en plus la vue sur
-		    			//laquelle il affichera le résultat de l'opération et le protocole à mettre en oeuvre
-		    			DataSendingManager managerHTTP = new DataSendingManager(url,filesToSend,tvHttp,"http",(OnTaskCompleted)thisActivity);
-		    			//...puis on lance le manager
-		    			managerHTTP.execute();
-		    		}
-		    		
-		    		//cas ou FTP est choisi
-		    		else if(cbFtp.isChecked()){
-		    			//on fixe l'adresse du serveur ftp comme adresse cible
-		    			String url = "192.168.0.4";
-		    			//on initialise donc le DataSendingManager en lui indiquant en plus la vue sur
-		    			//laquelle il affichera le résultat de l'opération et le protocole à mettre en oeuvre
-		    			DataSendingManager managerFTP = new DataSendingManager(url,filesToSend,tvFtp,"ftp",(OnTaskCompleted)thisActivity);
-		    			//...puis on lance le manager
-		    			managerFTP.execute();
-		    		}
-		    		
-		    		//CAS OU LE MAIL EST CHOISI
-
-		    		else if(cbMail.isChecked()){
-		    			//on fixe l'adresse du serveur ftp comme adresse cible
-		    			String url = destmail.getText().toString();
-		    			sendFileByEmail(url,filesToSend);
-		    		}
-		    		
-		    		//cas ou aucun protocole n'est choisi 
-		    		if(!cbHttp.isChecked() && !cbFtp.isChecked() && !cbMail.isChecked()){
-		    			//on affiche un message à l'utilisateur
-		    			Toast toast = Toast.makeText(getApplicationContext(), "please choose a protocole", Toast.LENGTH_SHORT);
-		    			toast.show();
-		    		}
-		    		
-		    		
-		    		
-	    		}catch(FileToSendException e){
-	    			Toast toast = Toast.makeText(getApplicationContext(), e.getMessage(), Toast.LENGTH_SHORT);
-	    			toast.show();
-	    		}
-	    		
+	    			//CHANGEMENT : GENERATION DU FICHIER A PARTIR DE LA BDD.
+	    			
+	    			Log.d("DEBUG WRITER","0");
+	    			FileGenerator ecrivain = new FileGenerator(connecteur,Integer.parseInt(user.getText().toString()),Integer.parseInt(group.getText().toString()),"blablabla",(OnTaskCompleted)thisActivity);
+	    			Log.d("DEBUG WRITER","1");
+	    			ecrivain.execute();
+	    			
+	    			//SI SUPPRESSION DES FEUILLES IL FAUT RESET DU MANAGER INSERTION ET DU OLD CONTEXT (MISE A NULL)
+	    			
+	    			
+	    		}	
 	    	}
 	   		
 		});
     }
     
     
-  
+  public void onFileReady(ByteArrayOutputStream file){
+	  
+	  
+	  if(file==null){
+      	Toast toast = Toast.makeText(getApplicationContext(), "No leaf to be write ", Toast.LENGTH_SHORT);
+		toast.show();
+	  }else{
+		  //on insert l'output dans la hashmap des fichier à envoyer
+			//Hashmap de fichiers:: si on envoie pas de fichiers, la hashmap sera vide
+			HashMap<String,FileToUpload> filesToSend = new HashMap<String,FileToUpload>();
+			
+			
+			//nom généré avec un TIMESTAMP
+			String name = "file"+System.currentTimeMillis();//filename.getText().toString();
+			//on convertit l'output stream en inputstream
+			InputStream content = new ByteArrayInputStream(file.toByteArray());
+		    byte[] buffer = new byte[1024]; // Adjust if you want
+		    int bytesRead;
+			FileToUpload monFichier = new FileToUpload(name,content);
+			//on le place dans la hashmap en fixant le nom du champs du formulaire le fichier se rapportera
+			//Ce champ a été délibérément fixé en dur et non laissé au choix de l'utilisateur!
+			filesToSend.put("uploadedFile", monFichier);
+		  
+			//CI DESSOUS ON NE PEUT CHOISIR QU'UN SEUL PROTOCOLE CAR C'EST UNIQUEMENT LE 
+			//PREMIER TRANSFERT A LANCER, SI PLUSIEURS TRANSFERT CHOISIS, ON UTILISERA
+			//LA METHODE DE CALLBACK DE FACON A FAIRE CES TRANSFERTS L'UN APRES L'AUTRE
+				
+		  
+		//cas ou HTTP est choisi
+			if(cbHttp.isChecked()){
+				//on fixe l'adresse du serveur http comme adresse cible
+				String url = "http://192.168.0.4:8080/upload";
+				//on initialise donc le DataSendingManager en lui indiquant en plus la vue sur
+				//laquelle il affichera le résultat de l'opération et le protocole à mettre en oeuvre
+				DataSendingManager managerHTTP = new DataSendingManager(url,filesToSend,tvHttp,"http",(OnTaskCompleted)thisActivity);
+				//...puis on lance le manager
+				managerHTTP.execute();
+			}
+			
+			//cas ou FTP est choisi
+			else if(cbFtp.isChecked()){
+				//on fixe l'adresse du serveur ftp comme adresse cible
+				String url = "192.168.0.4";
+				//on initialise donc le DataSendingManager en lui indiquant en plus la vue sur
+				//laquelle il affichera le résultat de l'opération et le protocole à mettre en oeuvre
+				DataSendingManager managerFTP = new DataSendingManager(url,filesToSend,tvFtp,"ftp",(OnTaskCompleted)thisActivity);
+				//...puis on lance le manager
+				managerFTP.execute();
+			}
+			
+			//CAS OU LE MAIL EST CHOISI
+	
+			else if(cbMail.isChecked()){
+				//on fixe l'adresse du serveur ftp comme adresse cible
+				String url = destmail.getText().toString();
+				sendFileByEmail(url,filesToSend);
+			}
+	  }
+
+  }
     
     public void onTaskCompleted(String protocole, HashMap<String,FileToUpload> filesSended){
     	if(protocole.equals("http")){//cas où le transfert HTTP vient de terminer
