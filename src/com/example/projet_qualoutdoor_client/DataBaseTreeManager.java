@@ -96,24 +96,38 @@ public class DataBaseTreeManager {
 	}
 	
 	/*
-	 * Fonction qui permet de supprimer le noeud courrant : utile pour l'écriture du fichier, le manager sera ensuite replacé
-	 * sur la racine, pas génant car les suppressions sont suivies de focusOn*/
-	public void deleteCurrentNode() throws DataBaseException{
-		int nb = db.delete(table.getName(),"ls = ? AND rs = ?",new String[] {Integer.toString(this.currentMinSide), Integer.toString(this.currentMaxSide) });
-		if(nb!=1){
-			throw new DataBaseException("unicity not preserved!");
-		}else{
-			/*la suppression a bien eu lieu
-			 * il faut décaler vers la gauche toutes les bornes d'abscisse supérieur à la Borne min de l'intervalle d'insertion
-			 * aspirer l'espace créer par la supression de l'intervalle*/
-			String updateQuery1 = "UPDATE "+table.getName()+" SET ls = ls - 2 WHERE ls >= "+this.currentMinSide+";";
-			String updateQuery2 = "UPDATE "+table.getName()+" SET rs = rs - 2 WHERE rs >= "+this.currentMinSide+";";
-			db.execSQL(updateQuery1);
-			db.execSQL(updateQuery2);
-			//on place le curseur en root
-			this.reset();//ATTENTION IL FAUT ACCOMPAGNER CE RESET D'UN RESET DU OLD CONTEXT ASSOCIE
-		}
+	 * FONCTION OBSOLETE
+	 * 
+	 * Fonction qui permet de supprimer une feuille identifiée par sa reference, pour éviter tout conflit
+	 * avec les noeuds non feuilles on verifiera que la largeur est bien de 1*/
+	public void deleteLeaf(int ref) throws DataBaseException{
+		//on repere la coordonnée gauche de la feuille
+		 String selectQuery = "SELECT ls FROM "+table.getName()+" WHERE  VALUE = ? AND rs - ls = 1";
+		 Cursor c = db.rawQuery(selectQuery, new String[] {Integer.toString(ref)});
+	     if (c.moveToFirst()) {
+	    	 int bordMin;
+	    	 bordMin = c.getInt(0);//une fois que l'on a son vord gauche on supprime la feuille
+	    	 int nb = db.delete(table.getName()," VALUE = ? AND rs - ls = 1",new String[] {Integer.toString(ref)});
+	    	 if(nb!=1){
+	 			throw new DataBaseException("unicity not preserved!");
+	 		}else{
+	 			Log.d("DEBUG DELETING","REFERENCE "+ref+" DELETED");
+	 			/*la suppression a bien eu lieu
+	 			 * il faut décaler vers la gauche toutes les bornes d'abscisse supérieur à la Borne min de l'intervalle d'insertion
+	 			 * aspirer l'espace créer par la supression de l'intervalle*/
+	 			String updateQuery1 = "UPDATE "+table.getName()+" SET ls = ls - 2 WHERE ls >= "+bordMin+";";
+	 			String updateQuery2 = "UPDATE "+table.getName()+" SET rs = rs - 2 WHERE rs >= "+bordMin+";";
+	 			db.execSQL(updateQuery1);
+	 			db.execSQL(updateQuery2);
+	 			//on place le curseur en root
+	 			this.reset();//ATTENTION IL FAUT ACCOMPAGNER CE RESET D'UN RESET DU OLD CONTEXT ASSOCIE
+	 		}
+	     }
+		
+		
 	}
+	
+	
 	
 	/*fonction qui permet devoir si un noeud existe et s'il n'existe pas, elle le créée*/
 	public void findOrCreate(int ref){
@@ -153,6 +167,7 @@ public class DataBaseTreeManager {
 	
 	/*fonction qui remet à zero le manager: ses bornes sont repositionnées sur la racine*/
 	public void reset() throws DataBaseException{
+
 		   String selectQuery = "SELECT * FROM "+table.getName()+" WHERE ls = 1";//on repert root car sa borneMin vaut toujours 1
 		   Log.d("DEBUG TREE  :","1");
 	       Cursor c = db.rawQuery(selectQuery, null);
@@ -165,6 +180,7 @@ public class DataBaseTreeManager {
 	        }else{
 	        	throw new DataBaseException("RESET TREE MANAGER : can't locate root node");
 	        }
+		
 	       
 	}
 	

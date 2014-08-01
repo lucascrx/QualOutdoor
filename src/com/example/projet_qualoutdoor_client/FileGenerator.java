@@ -17,18 +17,14 @@ public class FileGenerator extends AsyncTask<Void, Void, ByteArrayOutputStream> 
 	private SQLConnector connecteur;
 	private OnTaskCompleted callback;//l'objet sur lequel appliquer la methode de callbak une fois la tache terminée
 	//SOLUTION PROVISOIRE
-	private int user;
-	private int group;
 	private String comments;
 	
 	private ProgressDialog progressDialog;	
 	
-	public FileGenerator(SQLConnector conn,int usr,int gpe,String com,OnTaskCompleted cb){//DataBaseTreeManager manager){
+	public FileGenerator(SQLConnector conn,String com,OnTaskCompleted cb){//DataBaseTreeManager manager){
 		//this.managerWriter = manager;
 		this.file= new ByteArrayOutputStream();
 		this.comments=com;
-		this.user=usr;
-		this.group=gpe;
 		this.connecteur=conn;
 		this.callback=cb;
 		Log.d("DEBUG WRITER","01");
@@ -40,10 +36,10 @@ public class FileGenerator extends AsyncTask<Void, Void, ByteArrayOutputStream> 
 			//si on pointe une feuille, on va chercher ses détails pour les écrire
 			if(managerWriter.getMaxSide()-managerWriter.getMinSide()==1){
 				int refFeuille = managerWriter.getCurrentReference();//on récupere la reference de la feuille
+			
 				ArrayList<String> details = connecteur.getLeafDetails(refFeuille);//on demande ses détails au connecteur
-				//on peut maintenant supprimer cette feuille et sa reference de la bdd.
-				//managerWriter.deleteCurrentNode();//suppression de la reference
-				//connecteur.deleteLeaf(refFeuille);//suppression de la feuille.
+				
+				Log.d("DEBUG DELETING","LEAF "+refFeuille+" DELETED");
 				this.file.write("[".getBytes());
 				int compteurVirgule1 = 1;
 				for(String field : details){//on inscrit à la suite ses détails
@@ -77,19 +73,24 @@ public class FileGenerator extends AsyncTask<Void, Void, ByteArrayOutputStream> 
 	}
 	
 	
-	public void completeRetranscription(String comments,int group, int user, DataBaseTreeManager managerWriter) throws DataBaseException{
+	public void completeRetranscription(String comments, DataBaseTreeManager managerWriter) throws DataBaseException{
 		try {
 			//on verifie s'il ya des feuilles à envoyer:
 			if(this.connecteur.hasLeaf()){	
-				this.file.write(("[["+comments+"],["+group+",["+user+",").getBytes());//ouverture du fichier
+				this.file.write(("[["+comments+"],").getBytes());//ouverture du fichier
+
 				this.nodeRetranscription(managerWriter);
 				Log.d("DEBUG WRITER","13");
-				this.file.write(("]]]").getBytes());
+				this.file.write(("]").getBytes());
 				Log.d("DEBUG WRITER","131");
+				//une fois le fichier généré on remet à zéro tout le systeme de stockage
+				this.connecteur.completeReset();
+				
+				
 			}else{
 				throw new DataBaseException("no leaf to be write!");
 			}
-		} catch (IOException e) {
+		} catch (IOException e) {//capte les exceptions liées à l'écriture dans le buffer
 			e.printStackTrace();
 		}
 	
@@ -99,7 +100,7 @@ public class FileGenerator extends AsyncTask<Void, Void, ByteArrayOutputStream> 
 	protected ByteArrayOutputStream doInBackground(Void... params) {
 		Log.d("DEBUG WRITER","11");
 		try {
-			completeRetranscription(this.comments,this.group, this.user, this.connecteur.prepareManager());
+			completeRetranscription(this.comments, this.connecteur.prepareManager());
 			return this.file;
 		} catch (DataBaseException e) {//Dans le cas ou il n'y a pas de feuilles à écrire
 			e.printStackTrace();

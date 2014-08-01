@@ -26,9 +26,9 @@ public class SQLConnector {
 	private DataBaseTreeManager manager;//manager de l'arbre de la bdd:MANAGER D'INSERTION
 	
 	
-	//le connector garde en memoire les derniers MCC,MNC,NTC,Metric accèdés afin d'indiquer au
+	//le connector garde en memoire les derniers Group,USer,MCC,MNC,NTC,Metric accèdés afin d'indiquer au
 	//manager comment se déplacer dans l'arbre pour une nouvelle insertion.
-	//ce quadruplet represe la position courante du manager après insertion, il est stocké dans un contexte
+	//ce sixtuplet represe la position courante du manager après insertion, il est stocké dans un contexte
 	
 	private MeasureContext oldContext;
 	
@@ -37,7 +37,7 @@ public class SQLConnector {
 	//le constructeur engendre un nouveau createur de bdd
 	public SQLConnector(Context context) throws DataBaseException{
 		this.dbCreator = new SQLDataBaseCreator(context);
-		this.oldContext = new MeasureContext(4);
+		this.oldContext = new MeasureContext(6);
 	}
 	
 	//open() permet de produire la base de donnée à partir du constructeur
@@ -176,9 +176,9 @@ public class SQLConnector {
 	
 	/*Methode qui insere une mesure dans la table des mesures, elle renvoie l'identifiant de la
 	 * ligne insérée ou -1 en cas de probleme*/
-	public int insertData(long lat, long lng,String data){
+	public int insertData(long lat, long lng,String data) throws DataBaseException{
 		int id = -1;
-		try{//on prépare la requete d'insertion, la date est générée par SQL
+		//on prépare la requete d'insertion, la date est générée par SQL
 			String insertQuery = "INSERT INTO "+this.dbCreator.getTableMeasure().getName()+" (DATE , LAT , LNG, DATA) VALUES (CURRENT_TIMESTAMP ,"+lat+","+lng+", '"+data+"' );";
 			db.execSQL(insertQuery);//Execution de la requete d'insertion
 			Cursor c = db.rawQuery("SELECT last_insert_rowid()", null);//on récupère l'ID du dernier élément inséré
@@ -188,9 +188,7 @@ public class SQLConnector {
 			else{
 				throw new DataBaseException("SQL CONNECTOR : can't find ID of inserted measure ! ");			
 			}
-		}catch(DataBaseException e){
-			e.printStackTrace();
-		}
+
 		return id;
 	}
 	
@@ -203,9 +201,8 @@ public class SQLConnector {
 	 * 
 	 * 
 	 */
-	public void insertMeasure(MeasureContext newContext, HashMap<Integer,String> dataList, long lat, long lng){
-		
-		try{
+	public void insertMeasure(MeasureContext newContext, HashMap<Integer,String> dataList, long lat, long lng) throws DataBaseException, CollectMeasureException{
+	
 			//INSERTIONS SUCESSIVES DANS LA TABLE DE MESURES
 			//CHAQUE INSERTION DE DATA EST SUIVIE PAR UNE INSERTION ASSOCIEE DANS LA TABLE DE REFERENCE
 			int ref;
@@ -231,11 +228,7 @@ public class SQLConnector {
 			String str2 = DatabaseUtils.dumpCursorToString(c2);
 			Log.d("DEBUG MEASURE",str2);
 			c2.close();
-		}catch(CollectMeasureException e){
-			e.printStackTrace();
-		}catch(DataBaseException e){
-			e.printStackTrace();
-		}
+
 		
 		
 	}
@@ -284,14 +277,9 @@ public class SQLConnector {
 	}
 	
 	/*Fonction qui retrourne un manager : utile pour le file generator qui en a besoin*/
-	public DataBaseTreeManager prepareManager(){
+	public DataBaseTreeManager prepareManager() throws DataBaseException{
 		DataBaseTreeManager manager = null;
-		try {
-			manager = new DataBaseTreeManager(this.db,this.dbCreator.getTableReference());
-		} catch (DataBaseException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+		manager = new DataBaseTreeManager(this.db,this.dbCreator.getTableReference());
 		return manager;
 	}
 	
@@ -308,15 +296,36 @@ public class SQLConnector {
 		return bool;
 	}
 	
-	public void deleteLeaf(int ref){
-		try{
+	public void deleteLeaf(int ref) throws DataBaseException{
+
 			int nb = db.delete(this.dbCreator.getTableMeasure().getName(),"ID = ?",new String[] {Integer.toString(ref) });
 			if(nb!=1){
 				throw new DataBaseException("unicity not preserved!");
 			}
-		}catch(DataBaseException e){
-			e.printStackTrace();
-		}
+
+	}
+	
+	/*Reset complet du systeme de stockage apreès envoi
+	 * 
+	 * flush des tables de stockage à utiliser apres envoi du fichier
+	 * La table mesure est vidée completement
+	 * la table de reference est vidée completement sauf de la ligne root (ls=1)
+	 * 
+	 * OldContexte remis à zero
+	 * 
+	 * Manager replacé sur la racine*/
+	public void completeReset() throws DataBaseException{
+
+			this.db.delete(this.dbCreator.getTableMeasure().getName(),null,null);//flush des mesures
+			this.db.delete(this.dbCreator.getTableReference().getName(), null, null);//flush des references
+			//On INSERE LE ROOT DANS LA TABLE DE REFERENCE
+			db.execSQL("INSERT INTO "+this.dbCreator.getTableReference().getName()+" (ls,rs,value) VALUES (1,2,0); ");
+			
+			this.oldContext.reset();
+			
+		
+			this.manager.reset();
+
 	}
 
 }

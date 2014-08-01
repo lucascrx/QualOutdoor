@@ -96,8 +96,8 @@ public class MainActivity extends Activity implements OnTaskCompleted {
         
         //on récupère les éléments du layout qui nous interresse
         
-        user = (TextView)findViewById(R.id.IDUSER);
-        group = (TextView)findViewById(R.id.IDGROUP);
+        user = (EditText)findViewById(R.id.IDUSER);
+        group = (EditText)findViewById(R.id.IDGROUP);
         
         lng = (TextView)findViewById(R.id.ETLONG);
         lat = (TextView)findViewById(R.id.ETLAT);
@@ -148,7 +148,7 @@ public class MainActivity extends Activity implements OnTaskCompleted {
         
         //INITIALISATION DU CONTEXTE : ici la taille de l'arbre sans les extremes (root et feuilles)
         
-        this.newContext = new MeasureContext(4);
+        this.newContext = new MeasureContext(6);
         
         //INITIALISATION DES BOUTONS SIMULANT LES CHANGEMENTS DE PARAMETRE DU CONTEXTE
         
@@ -165,7 +165,7 @@ public class MainActivity extends Activity implements OnTaskCompleted {
 	  	    	  }else{//mise a jour du curseur
 	  	    		  int newMCC = Integer.parseInt(mess);
 	  	    		Log.d("CONTEXT DEBUG","MCC"+newMCC);
-	  	    		  	newContext.set(0,newMCC);
+	  	    		  	newContext.set(2,newMCC);
 	    	    		Toast toast = Toast.makeText(getApplicationContext(), "New MCC : context has changed", Toast.LENGTH_SHORT);
 	      				toast.show();
 	  	    	  }
@@ -189,7 +189,7 @@ public class MainActivity extends Activity implements OnTaskCompleted {
 	  	    	  }else{//mise a jour du curseur
 	  	    		  int newMNC = Integer.parseInt(mess);
 	  	    		  Log.d("CONTEXT DEBUG","MNC"+newMNC);
-	  	    		  newContext.set(1,newMNC);
+	  	    		  newContext.set(3,newMNC);
 	    	    		Toast toast = Toast.makeText(getApplicationContext(), "New MNC : context has changed", Toast.LENGTH_SHORT);
 	      				toast.show();
 	  	    	  }
@@ -213,7 +213,7 @@ public class MainActivity extends Activity implements OnTaskCompleted {
 	  	    	  }else{//mise a jour du curseur
 	  	    		  int newNTC = Integer.parseInt(mess);
 	  	    		Log.d("CONTEXT DEBUG","NTC"+newNTC);
-	  	    		newContext.set(2,newNTC);
+	  	    		newContext.set(4,newNTC);
 	  	    		Toast toast = Toast.makeText(getApplicationContext(), "New NTC : context has changed", Toast.LENGTH_SHORT);
 	  				toast.show();
 	  	    	  }
@@ -235,6 +235,14 @@ public class MainActivity extends Activity implements OnTaskCompleted {
     	      @Override
     	      public void onClick(View v) {
     	    	  try {
+    	    	  //on ajoute l'user et le group au contexte
+	    	    	  if(user!=null&&group!=null){
+	    	    		  newContext.set(0,Integer.parseInt(group.getText().toString()));//ajout du groupe au contexte
+	    	    		  newContext.set(1,Integer.parseInt(user.getText().toString()));//ajout de l'user au contexte
+	    	    	  }else{
+	    	    		  throw new CollectMeasureException("user ang group are not correctly filled!");
+	    	    	  }
+    	    	  
     	    		  if(!newContext.isCorrectlySet()){//verification de la validité du contexte
     	    			  throw new CollectMeasureException("contexte is not correctly filled!");
     	    		  }
@@ -350,6 +358,9 @@ public class MainActivity extends Activity implements OnTaskCompleted {
 				} catch (CollectMeasureException e) {
 					Toast toast = Toast.makeText(getApplicationContext(), e.toString(), Toast.LENGTH_SHORT);
       				toast.show();
+				}	catch (DataBaseException e) {
+					Toast toast = Toast.makeText(getApplicationContext(), e.toString(), Toast.LENGTH_SHORT);
+      				toast.show();
 				}
     	        
     	      }
@@ -372,7 +383,7 @@ public class MainActivity extends Activity implements OnTaskCompleted {
 	    			//CHANGEMENT : GENERATION DU FICHIER A PARTIR DE LA BDD.
 	    			
 	    			Log.d("DEBUG WRITER","0");
-	    			FileGenerator ecrivain = new FileGenerator(connecteur,Integer.parseInt(user.getText().toString()),Integer.parseInt(group.getText().toString()),"blablabla",(OnTaskCompleted)thisActivity);
+	    			FileGenerator ecrivain = new FileGenerator(connecteur,"blablabla",(OnTaskCompleted)thisActivity);
 	    			Log.d("DEBUG WRITER","1");
 	    			ecrivain.execute();
 	    			

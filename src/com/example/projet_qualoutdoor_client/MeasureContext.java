@@ -3,6 +3,8 @@ package com.example.projet_qualoutdoor_client;
 import java.util.ArrayList;
 import java.util.HashMap;
 
+import android.util.Log;
+
 /*Classe qui réprésente la liste des noeds non feuille de l'arbre.
  * Elle permet de comparer le contexte courant de rangement avec celui
  * d'une nouvelle mesure afin de minimiser les déplacements du manager
@@ -11,7 +13,7 @@ import java.util.HashMap;
  * */
 public class MeasureContext {
 	
-	private int lenghtTree; //longueur de l'arbre sur lequel le contexte est basé, ici 4: 0_MCC, 1_MNC, 2_NTC, 3_Metric (on ne compte pas root ni la feuille (car on ne va pas comparer la valeur des feuilles))
+	private int lenghtTree; //longueur de l'arbre sur lequel le contexte est basé, ici 6: 0_GROUP 1_USER 2_MCC, 3_MNC, 4_NTC, 5_Metric (on ne compte pas root ni la feuille (car on ne va pas comparer la valeur des feuilles))
 	private ArrayList<Integer> stages; //liste represente les différents étages ici : on a valeurMCC,valeursMNC,valeurNTC,valeurMetric
 	private int cursor;//curseur qui pointe sur un étage de la liste.
 
@@ -94,5 +96,12 @@ public class MeasureContext {
 	}
 	
 */
+	public void reset(){
+		Log.d("DEBUG CONTEXTE","RESET PROCEEDING");
+		for(int i=0;i<this.lenghtTree;i++){
+			this.stages.set(i,0);//on reinitialise toutes les valeurs du contexte à 0
+		}
+		this.cursor=0;//on pointe au sommet de l'arbre
+	}
 	
 }
