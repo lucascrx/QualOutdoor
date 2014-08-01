@@ -19,7 +19,8 @@ public class DataBaseTreeManager {
 	private int currentMinSide;
 	private int currentMaxSide;
 	
-
+/*Un manager est donc construit avec une bdd, une table sur laquelle il se déplace, on appelle la 
+ * méthode reset pour qu'il se positionnne sur la racine de l'arbre*/
 	public DataBaseTreeManager(SQLiteDatabase db, TableDB table) throws DataBaseException{
 		this.db = db;
 		this.table = table;

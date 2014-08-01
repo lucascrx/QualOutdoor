@@ -276,26 +276,29 @@ public class SQLConnector {
 		}
 	}
 	
-	/*Fonction qui retrourne un manager : utile pour le file generator qui en a besoin*/
+	/*Fonction qui retrourne un manager calé sur l'arbre : utile pour le file generator qui en a besoin*/
 	public DataBaseTreeManager prepareManager() throws DataBaseException{
 		DataBaseTreeManager manager = null;
 		manager = new DataBaseTreeManager(this.db,this.dbCreator.getTableReference());
 		return manager;
 	}
 	
+	/*Fonction qui permet de verifier si des feuilles sont présentes*/
 	public boolean hasLeaf(){
 		boolean bool;
+		//on regarde s'il y a des lignes dans la table de mesure
 		String selectQuery = "SELECT ID FROM "+this.dbCreator.getTableMeasure().getName();
 		Cursor c = db.rawQuery(selectQuery, null);
-		if (c.moveToFirst()) {
+		if (c.moveToFirst()) {//s'il y en a on renvoie TRUE
 			bool =  true;
-		}else{
+		}else{//sinon on renvoie FALSE
 			bool =  false;
 		}
 		c.close();
 		return bool;
 	}
 	
+	/*
 	public void deleteLeaf(int ref) throws DataBaseException{
 
 			int nb = db.delete(this.dbCreator.getTableMeasure().getName(),"ID = ?",new String[] {Integer.toString(ref) });
@@ -303,7 +306,7 @@ public class SQLConnector {
 				throw new DataBaseException("unicity not preserved!");
 			}
 
-	}
+	}*/
 	
 	/*Reset complet du systeme de stockage apreès envoi
 	 * 
@@ -316,10 +319,7 @@ public class SQLConnector {
 	 * Manager replacé sur la racine*/
 	public void completeReset() throws DataBaseException{
 
-			this.db.delete(this.dbCreator.getTableMeasure().getName(),null,null);//flush des mesures
-			this.db.delete(this.dbCreator.getTableReference().getName(), null, null);//flush des references
-			//On INSERE LE ROOT DANS LA TABLE DE REFERENCE
-			db.execSQL("INSERT INTO "+this.dbCreator.getTableReference().getName()+" (ls,rs,value) VALUES (1,2,0); ");
+			this.dbCreator.onCreate(db);
 			
 			this.oldContext.reset();
 			

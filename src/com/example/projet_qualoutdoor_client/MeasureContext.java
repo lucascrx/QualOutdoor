@@ -96,6 +96,7 @@ public class MeasureContext {
 	}
 	
 */
+	//on remet l'ensemble des étages du contexte à zero
 	public void reset(){
 		Log.d("DEBUG CONTEXTE","RESET PROCEEDING");
 		for(int i=0;i<this.lenghtTree;i++){
