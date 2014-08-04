@@ -8,133 +8,92 @@ import android.database.sqlite.SQLiteDatabase;
 import android.util.Log;
 
 /*Un DataBaseTree Manager va permettre l'insertion ordonnée des lignes dans la table de reference selon une archiecture
- * arborescente. Ainsi il possede deux attribut qui representent les bornes de l'intervalle courant surlequel il pointe
- * 
- * Theoriquement le Manager pointe sur des noeuds de l'étage NTC
+ * arborescente. La nouvelle representation de l'arbre dans la base de données étant un "applatissage" de l'arbre
+ * il va avoir un cuseur pointant sur une ligne de la table qui correspond à un noeud de l'arbre
 */
 public class DataBaseTreeManager {
-	private SQLiteDatabase db;//base de donnée sur laquelle agir.
-	private TableDB table;
+	private SQLiteDatabase db;//base de donnée sur laquelle le manager envoie les requetes.
+	private TableDB table;//table de la base de donnée sur laquelle il se déplace
 	
-	private int currentMinSide;
-	private int currentMaxSide;
+	private TreeCursor cursor;//curseur qui pointera sur une ligne précise de la table de reference donc sur un noeud de l'arbre
 	
-/*Un manager est donc construit avec une bdd, une table sur laquelle il se déplace, on appelle la 
- * méthode reset pour qu'il se positionnne sur la racine de l'arbre*/
+	/*Un manager est donc construit avec une bdd, une table sur laquelle il se déplace, on appelle la 
+	 * méthode reset pour qu'il se positionnne sur la racine de l'arbre*/
 	public DataBaseTreeManager(SQLiteDatabase db, TableDB table) throws DataBaseException{
 		this.db = db;
 		this.table = table;
-		this.reset();
+		this.cursor=new TreeCursor();
+		this.cursor.init();
 		
 	}
 	
-	/*Fonction qui permet de savoir si un noeud de valeur ref est contenu dans l'intervalle courant, 
-	 * si c'est le cas le DataBaseTreeManager est mis a jour sur les bornes de l'intervalle trouvé et
-	 * la valeur true est renvoyée et sinon le DataBaseTreeManager n'est pas modifié et la valeur false est retournée.
-	 * 
-	 * Fonctionne en partie grace à l'unicité des valeurs caracterisant les noeuds (pour 2 étages distincts!)
-	 * 
-	 * Si CurrentMinSide et CurrentMaxSide répresentent en tout instant les bornes d'un intervalle correspondant à un noeud,
-	 * alors il y aura au plus une ligne correspondant aux critères du select:
-	 * CAR:
-	 * -Si les 2 lignes représentent le même étage de l'arbre: on aurait 2 fils ou plus avec la meme valeur IMPOSSIBLE
-	 * -Une reference ne sera jamais commune entre 2 noeuds de 2 étages différents
+	/*Fonction qui permet de trouver la ligne du dernier élément du sous arbre dont le curseur pointe sur la racine*/
+	public int getSubTreeBoundary(){
+		int lastChild;
+		String selectQuery = "SELECT min(line) FROM "+table.getName()+" WHERE level = ? AND line > ? ";
+		Cursor c = db.rawQuery(selectQuery, new String[] {Integer.toString(this.cursor.level), Integer.toString(this.cursor.line)});
+		if (c.moveToFirst()) {//si un noeud de même étage est trouvé
+			lastChild = c.getInt(0)-1;//on recupère la ligne correspondant au dernier élément du sous arbre
+		}else{//sinon tous les autres éléments de la liste font partie du sous arbre
+			String countQuery = "SELECT Count(*) FROM "+table.getName();//on regarde le nombre d'éléments dans la table
+			Cursor c2 = db.rawQuery(countQuery,null);
+			c2.moveToFirst();
+			lastChild = c2.getInt(0);//la ligne du dernier élément de la liste correspond au nombre total de ligne grace à notre convention	 
+			c2.close();
+		}  
+		c.close();
+		return lastChild;
+	}
+	
+	/*Fonction qui permet de savoir si un noeud de valeur ref est contenue dans le sous arbre dont le curseur est la racine
+	 * si le noeud est trouvé  la valeur true est renvoyée et le curseur sera mis à jour sur ce dernier
+	 * et sinon le curseur n'est pas modifié et la valeur false est retournée.
 	 * */
 	public boolean contains(int ref){
-        String selectQuery = "SELECT * FROM "+table.getName()+" WHERE ls > ? AND rs < ? AND VALUE= ?";
-        Cursor c = db.rawQuery(selectQuery, new String[] {Integer.toString(this.currentMinSide), Integer.toString(this.currentMaxSide), Integer.toString(ref)});
-        if (c.moveToFirst()) {
-             this.currentMinSide = c.getInt(c.getColumnIndex("ls"));
-             this.currentMaxSide = c.getInt(c.getColumnIndex("rs"));
-             Log.d("DEBUG TREE******************","CURRENT CONTAINS"+ref);
-             return true;
-        }else{
-        	Log.d("DEBUG TREE******************","CURRENT DOES NOT CONTAINS"+ref);
-        	return false;	
-        }  
-		
+		boolean result;
+		//on repère les limites du sous arbre donc le cuseur pointe sur la racine afin de borner l'intervalle de recherche:
+		int boundary = getSubTreeBoundary();
+		//on recherche la référence indiqué en se limitant au boundary
+		String selectQuery = "SELECT * FROM "+table.getName()+" WHERE VALUE = ? AND line <= ? ";
+		Cursor c = db.rawQuery(selectQuery, new String[] {Integer.toString(ref), Integer.toString(boundary)});
+		if (c.moveToFirst()) {//si un noeud de même étage est trouvé on update le curseur et on renvoie true
+			this.cursor.update(c.getInt(0), c.getInt(1), c.getInt(2));
+			result = true;
+		}else{
+			result = false; 
+		}
+		return result;	
 	}
 	
-	/*Fonction qui permet d'inserer un nouveau noeud dans l'intervalle courant avec la valeur ref
-	 * le DataBaseTreeManager sera mis a jour avec les bornes du nouvel intervalle
-	 * 
-	 * le noeud sera inseré du coté des fortes valeurs.
-	 * 
-	 * pourque cette fonction agisse corresctement elle devra etre utilisée sur des intervalles correspondant à des noeuds
-	 * 
-	 * */
+	/*Fonction qui permet d'inserer un nouveau noeud dans l'arbre dans la ligne suivante
+	 * de celle qui est pointée à l'instant courant avec la valeur ref*/
 	public void insert(int ref){
-		/*il faut décaler toutes les bornes d'abscisse supérieur à la Borne max de l'intervalle d'insertion
-		 * pour faire de la place pour l'intervalle à insérer*/
-		String updateQuery1 = "UPDATE "+table.getName()+" SET ls = ls + 2 WHERE ls >= "+this.currentMaxSide+";";
-		String updateQuery2 = "UPDATE "+table.getName()+" SET rs = rs + 2 WHERE rs >= "+this.currentMaxSide+";";
+		/*il faut décaler toutes les lignes dont l'index est strictement supérieur à la ligne courante*/
+		String updateQuery1 = "UPDATE "+table.getName()+" SET line = line + 1 WHERE LINE > "+this.cursor.line+";";
 		db.execSQL(updateQuery1);
-		db.execSQL(updateQuery2);
-		//on insert le nouvel intervalle
-		String insertQuery = "INSERT INTO "+table.getName()+" (ls,rs,VALUE) VALUES ("+this.currentMaxSide+","+(this.currentMaxSide+1)+","+ref+");";
+		//on insert la nouvelle ligne
+		String insertQuery = "INSERT INTO "+table.getName()+" (LINE,VALUE,LEVEL) VALUES ("+(this.cursor.line+1)+","+ref+","+(this.cursor.level+1)+");";
 		db.execSQL(insertQuery);
-		//on retourne l'intervalle du nouveau noeud.
-		this.currentMinSide = this.currentMaxSide;
-		this.currentMaxSide = this.currentMaxSide+1;	
+		//on met a jour le curseur sur le nouveau noeud
+		this.cursor.update(this.cursor.line+1, ref, this.cursor.level+1);	
 	}
 	
 	/*Fonction qui permet d'inserer une feuille dans l'arbre : exactement pareille que la fonction précédente
-	 * sauf que le manager pointera toujours les bornes du noeud où a eu lieu l'insertion 
+	 * sauf que le curseur pointera vers le noeud pere de la feuille
 	 * */
 	public void insertLeaf(int ref){
-		/*il faut décaler vers la droite toutes les bornes d'abscisse supérieur à la Borne max de l'intervalle d'insertion
-		 * pour faire de la place pour l'intervalle à insérer*/
-		String updateQuery1 = "UPDATE "+table.getName()+" SET ls = ls + 2 WHERE ls >= "+this.currentMaxSide+";";
-		String updateQuery2 = "UPDATE "+table.getName()+" SET rs = rs + 2 WHERE rs >= "+this.currentMaxSide+";";
+		/*il faut décaler toutes les lignes dont l'index est strictement supérieur à la ligne courante*/
+		String updateQuery1 = "UPDATE "+table.getName()+" SET line = line + 1 WHERE LINE > "+this.cursor.line+";";
 		db.execSQL(updateQuery1);
-		db.execSQL(updateQuery2);
-		//on insert le nouvel intervalle
-		String insertQuery = "INSERT INTO "+table.getName()+" (ls,rs,VALUE) VALUES ("+this.currentMaxSide+","+(this.currentMaxSide+1)+","+ref+");";
+		//on insert la nouvelle ligne
+		String insertQuery = "INSERT INTO "+table.getName()+" (LINE,VALUE,LEVEL) VALUES ("+(this.cursor.line+1)+","+ref+","+(this.cursor.level+1)+");";
 		db.execSQL(insertQuery);
-		//il y a juste à faire une mise a jour de la borne max car cette derniere a été décalée pour permettre l'insertion
-		this.currentMaxSide = this.currentMaxSide +2;
-		//l'autre borne n'a pas changée
 	}
-	
-	/*
-	 * FONCTION OBSOLETE
-	 * 
-	 * Fonction qui permet de supprimer une feuille identifiée par sa reference, pour éviter tout conflit
-	 * avec les noeuds non feuilles on verifiera que la largeur est bien de 1*/
-	public void deleteLeaf(int ref) throws DataBaseException{
-		//on repere la coordonnée gauche de la feuille
-		 String selectQuery = "SELECT ls FROM "+table.getName()+" WHERE  VALUE = ? AND rs - ls = 1";
-		 Cursor c = db.rawQuery(selectQuery, new String[] {Integer.toString(ref)});
-	     if (c.moveToFirst()) {
-	    	 int bordMin;
-	    	 bordMin = c.getInt(0);//une fois que l'on a son vord gauche on supprime la feuille
-	    	 int nb = db.delete(table.getName()," VALUE = ? AND rs - ls = 1",new String[] {Integer.toString(ref)});
-	    	 if(nb!=1){
-	 			throw new DataBaseException("unicity not preserved!");
-	 		}else{
-	 			Log.d("DEBUG DELETING","REFERENCE "+ref+" DELETED");
-	 			/*la suppression a bien eu lieu
-	 			 * il faut décaler vers la gauche toutes les bornes d'abscisse supérieur à la Borne min de l'intervalle d'insertion
-	 			 * aspirer l'espace créer par la supression de l'intervalle*/
-	 			String updateQuery1 = "UPDATE "+table.getName()+" SET ls = ls - 2 WHERE ls >= "+bordMin+";";
-	 			String updateQuery2 = "UPDATE "+table.getName()+" SET rs = rs - 2 WHERE rs >= "+bordMin+";";
-	 			db.execSQL(updateQuery1);
-	 			db.execSQL(updateQuery2);
-	 			//on place le curseur en root
-	 			this.reset();//ATTENTION IL FAUT ACCOMPAGNER CE RESET D'UN RESET DU OLD CONTEXT ASSOCIE
-	 		}
-	     }
-		
-		
-	}
-	
-	
 	
 	/*fonction qui permet devoir si un noeud existe et s'il n'existe pas, elle le créée*/
 	public void findOrCreate(int ref){
 		if(!this.contains(ref)){//Si l'intervalle courant ne contient pas de noeud contenant la référence indiquée
 			this.insert(ref);//alors on le crée
-			Log.d("DEBUG TREE*****",ref + "NOT CONTAINED THEN CREATION ");
 		}//Dans tous les cas le DataBaseTreeManager aura ses bornes mises à jour
 	}
 	
@@ -146,107 +105,74 @@ public class DataBaseTreeManager {
 	 * si l'element n'a pas de père alors le DataBaseTreeManager sera inchangé
 	 */
 	public void getFather() throws DataBaseException{
-		if(this.currentMinSide!=1){//Dans ce cas l'intervalle n'est pas la racine donc admet un père
-			//le père est l'intervalle qui comprend strictement l'intervalle courant avec la plus grande valeur min
-			 String selectQuery = "SELECT max(ls),rs FROM "+this.table.getName()+" WHERE ls < ? AND rs > ?";
-		     Cursor c = db.rawQuery(selectQuery, new String[] {Integer.toString(this.currentMinSide), Integer.toString(this.currentMaxSide) });
+		if(this.cursor.level!=0){//Dans ce cas l'intervalle n'est pas la racine donc admet un père
+			//le père est la ligne la plus proche au dessus du curseur dont le level vaut le level courant +1
+			 String selectQuery = "SELECT max( LINE ) , VALUE , LEVEL FROM "+this.table.getName()+" WHERE LINE < ? AND LEVEL = ?";
+		     Cursor c = db.rawQuery(selectQuery, new String[] {Integer.toString(this.cursor.line), Integer.toString(this.cursor.level - 1) });
 		     if (c.moveToFirst()) {
-		    	 //on a retrouvé le père on met à jour les bornes du DataBaseTreeManager
-	             int max = c.getInt(1);
-	             int min = c.getInt(0);
-	             Log.d("DEBUG TREE **********","FATHER OF NODE FOUND CURRENT INT IS "+this.currentMinSide+" "+this.currentMaxSide);
-	             this.currentMaxSide= max;
-	             this.currentMinSide = min;
-	             Log.d("DEBUG TREE **********","POINTING OF FATHER NOW INT IS"+this.currentMinSide+" "+this.currentMaxSide);
+		    	 //on a retrouvé le père on met à jour les champs du curseur
+	             this.cursor.update(c.getInt(0), c.getInt(1), c.getInt(2));
 	        }else{
 	        	throw new DataBaseException("TREE MANAGER GET FATHER : can't find node father");
 	        }
+		    c.close();
 		}//si on pointe déjà sur la racine, on ne fait rien.	
 	}
 	
 	
 	
-	/*fonction qui remet à zero le manager: ses bornes sont repositionnées sur la racine*/
-	public void reset() throws DataBaseException{
-
-		   String selectQuery = "SELECT * FROM "+table.getName()+" WHERE ls = 1";//on repert root car sa borneMin vaut toujours 1
-		   Log.d("DEBUG TREE  :","1");
-	       Cursor c = db.rawQuery(selectQuery, null);
-	       Log.d("DEBUG TREE","2");
-	       if (c.moveToFirst()) {
-	    	   Log.d("DEBUG TREE","3");
-	             int max = c.getInt(c.getColumnIndex("rs"));
-	             this.currentMaxSide= max;
-	             this.currentMinSide = 1;
-	        }else{
-	        	throw new DataBaseException("RESET TREE MANAGER : can't locate root node");
-	        }
+	/*Fonction qui permet de réinitialiser le manager en replaçant son curseur sur la racine*/
+	public void reset(){
+		this.cursor.init();
+	}
+	
+	public TreeCursor getCursor(){
+		return this.cursor;
+	}
+	
+	/*Fonction qui permet d'analyser la ligne suivante de la table de ref : utile pour l'écrivain*/
+	public boolean moveToNextLine(){
+		boolean exists;
+		String selectQuery = "SELECT  LINE, VALUE , LEVEL FROM "+this.table.getName()+" WHERE LINE = ?";
+	     Cursor c = db.rawQuery(selectQuery, new String[] {Integer.toString(this.cursor.line+1)});
+	     if (c.moveToFirst()) {//si la ligne suivante existe
+	    	 this.cursor.update(c.getInt(0), c.getInt(1),c.getInt(2));
+	    	 exists = true;
+	     }else{
+	    	 exists = false;
+	     }
+	     return exists;
+	}
+	
+	/*Classe interne qui permet simplement de caracteriser l'objet curseur*/
+	public class TreeCursor {
+		private int line;//numero de la ligne pointée par le curseur;
+		private int reference;//le champs reference de la ligne pointée par le curseur;
+		private int level; //le champs level de la ligne pointée par le curseur;
 		
-	       
-	}
-	
-	/*
-	 * fonction qui permet de placer le manager sur un intervalle désiré, utile pour le manager écrivain
-	 * */
-	public void focusOn(int bordMin, int bordMax){
-		this.currentMinSide=bordMin;
-		this.currentMaxSide=bordMax;
-	}
-	
-	/*
-	 * renvoie le bord max de l'intervalle pointé
-	 * */
-	public int getMaxSide(){
-		return this.currentMaxSide;
-	}
-	
-	/*
-	 * renvoie le bord Min de l'intervalle pointé
-	 * */
-	public int getMinSide(){
-		return this.currentMinSide;
-	}
-	
-	/*Renvoie la référence de l'intervalle pointé
-	 * */
-	public int getCurrentReference() throws DataBaseException{
-		int ref;
-		String selectQuery = "SELECT VALUE FROM "+table.getName()+" WHERE ls = ? AND rs = ?";
-		Cursor c = db.rawQuery(selectQuery, new String[] {Integer.toString(this.currentMinSide), Integer.toString(this.currentMaxSide) });
-		if (c.moveToFirst()) {
-            ref = c.getInt(0);
-		}else{
-			throw new DataBaseException("Reference is unreachable ! ");
+		public int getLevel(){
+			return this.level;
 		}
-		return ref;
 		
-	}
-	
-	/*
-	 * Renvoi la liste des intervalles correspondants à tous les noeuds fils de l'intervalle pointé
-	 */
-	public ArrayList<int[]> getDirectChildSides() throws DataBaseException{
-		ArrayList<int[]> intervals = new ArrayList<int[]>();
-		int bordMax;
-		int refSide = this.currentMinSide+1;//abscisse de reference qui va pointer sur les bord minimum de tous les fils
-		//ici on pointe sur le bord min du premier fils (s'il y en a un)
-		while(refSide != this.currentMaxSide){//tant que l'on a pas atteint le bord max du noeud
-			//on récupère la borne droite de l'intervalle associé à la borne gauche récupérée
-			String selectQuery = "SELECT rs FROM "+table.getName()+" WHERE ls = ?";
-			Cursor c = db.rawQuery(selectQuery, new String[] {Integer.toString(refSide)});
-			if (c.moveToFirst()) {
-				bordMax = c.getInt(0);
-				//on a donc un intervalle correspondant à un fils, on l'ajoute à la liste
-				intervals.add(new int[] {refSide,bordMax});
-				//on met a jour refSide en le faisant pointer sur le bord min du voisin
-				refSide = bordMax+1; 
-			}else{
-				throw new DataBaseException("can't locate children ! ");
-			}	
+		public int getReference(){
+			return this.reference;
 		}
-		return intervals;
+		
+		public int getLine(){
+			return this.line;
+		}
+		
+		public void init(){//on positionne le curseur en root;
+			this.line=2;
+			this.reference=0;
+			this.level=0;
+		}
+		
+		public void update(int li, int ref, int lev){
+			this.line=li;
+			this.reference=ref;
+			this.level=lev;
+		}
 	}
-	
-	
 	
 }

@@ -12,8 +12,9 @@ import android.util.Log;
  * réinitialiser en cas de mise à jour, elle definit aussi 
  * le nom de la table et le nom de ses colonnes 
  * 
- * Le Systeme de base de données de Recorder est constitué de 7 tables:
- * une table de référence et 6 tables annexes
+ * Le Systeme de base de données de Recorder est constitué de 2 tables:
+ * une table qui represente la structure de l'arbre : la table de reference 
+ * une autre qui stocke le détail de chaque feuille : la table de mesures
  * 
  */
 public class SQLDataBaseCreator extends SQLiteOpenHelper{
@@ -31,7 +32,7 @@ public class SQLDataBaseCreator extends SQLiteOpenHelper{
 	public SQLDataBaseCreator(Context context) throws DataBaseException {
 		super(context, DATABASE_NAME, null, DATABASE_VERSION);
 		// TODO Auto-generated constructor stub
-		this.table_reference = new TableDB("recorder_tt",new String[] {"ls","rs","VALUE"}, new String[] {"INTEGER","INTEGER NOT NULL","INTEGER NOT NULL"});
+		this.table_reference = new TableDB("recorder_tt",new String[] {"LINE","VALUE","LEVEL"}, new String[] {"INTEGER","INTEGER NOT NULL","INTEGER"});
 		this.table_measure = new TableDB("measure_it",new String[] {"ID","DATE","LAT","LNG","DATA"}, new String[] {"INTEGER PRIMARY KEY AUTOINCREMENT","DATETIME","REAL","REAL","VARCHAR"});
 		
 	}
@@ -61,7 +62,7 @@ public class SQLDataBaseCreator extends SQLiteOpenHelper{
 			db.execSQL(table_measure.createTableintoDB());//construction de la table de mesure
 
 				//On INSERE LE ROOT DANS LA TABLE DE REFERENCE
-			db.execSQL("INSERT INTO "+this.table_reference.getName()+" (ls,rs,value) VALUES (1,2,0); ");
+			db.execSQL("INSERT INTO "+this.table_reference.getName()+" (LINE,VALUE,LEVEL) VALUES (2,0,0); ");
 			
 			Log.d("DEBUG SQL CREATOR", "tables créés");
 			

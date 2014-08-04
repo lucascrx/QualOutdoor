@@ -12,9 +12,10 @@ import android.util.Log;
 
 public class FileGenerator extends AsyncTask<Void, Void, ByteArrayOutputStream> {
 	/*
-	 * Cette classe va examiner la base de donnée pour produire le fichier JSARRAY associé
-	 * à l'aide de son propre manager elle va naviguer dans la table de référence de la bdd
-	 * à restranscrir et le contenu sera stocké dans un ByteArrayOutputStream
+	 * Cette classe va examiner les 2 tables de la bdd pour former un fichier csv, il sera possible de rajouter
+	 * des commentaires en en-tête.
+	 * Elle va donc retranscrire la table de reference via un load data in file, mais ensuite elle devra remplacer chaque
+	 * reference de feuille par sa ligne associée dans la table de mesures
 	 * 
 	 * Elle s'executera dans une tache asynchrone, et renverra un call back une fois achevée*/
 
@@ -31,21 +32,16 @@ public class FileGenerator extends AsyncTask<Void, Void, ByteArrayOutputStream> 
 		this.comments=com;
 		this.connecteur=conn;
 		this.callback=cb;
-		Log.d("DEBUG WRITER","01");
 	}
 	
 	/*Fonction recursive qui permet de restranscrire un noeud dans l'outputStream : ses détails, et son contenu (ses fils)*/
-	public void nodeRetranscription(DataBaseTreeManager managerWriter){
-		Log.d("DEBUG WRITER","12");
+	/*public void nodeRetranscription(DataBaseTreeManager managerWriter){
 		try{
 			//si on pointe une feuille, on va chercher ses détails pour les écrire
-			if(managerWriter.getMaxSide()-managerWriter.getMinSide()==1){
-				int refFeuille = managerWriter.getCurrentReference();//on récupere la reference de la feuille
-			
+			if(managerWriter.getCursor().getLevel()==1){
+				int refFeuille = managerWriter.getCursor().getReference();//on récupere la reference de la feuille
 				ArrayList<String> details = connecteur.getLeafDetails(refFeuille);//on demande ses détails au connecteur
-				
-				Log.d("DEBUG DELETING","LEAF "+refFeuille+" DELETED");
-				this.file.write("[".getBytes());//ouverture d'un noeud dans le fichier correspondant à la feuille
+				this.file.write(";".getBytes());//ouverture d'un noeud dans le fichier correspondant à la feuille
 				int compteurVirgule1 = 1;
 				for(String field : details){//on inscrit à la suite ses détails
 					this.file.write(field.getBytes());
@@ -56,7 +52,7 @@ public class FileGenerator extends AsyncTask<Void, Void, ByteArrayOutputStream> 
 				}
 				this.file.write("]".getBytes());//on ferme le noued feuille du fichier
 			}else{//on pointe un noeud non feuille on ecrit sa reference et on recommence avec ses fils
-				int refNode = managerWriter.getCurrentReference();
+				int refNode = managerWriter.getCursor().getReference();
 				this.file.write(("["+refNode+",").getBytes());//on écrit le détail du noeud du fichier
 				int compteurVirgule=1;
 				ArrayList<int[]> children = managerWriter.getDirectChildSides();//on écrit récursivement les fils du noeud
@@ -76,6 +72,41 @@ public class FileGenerator extends AsyncTask<Void, Void, ByteArrayOutputStream> 
 				e.printStackTrace();
 			}
 	}
+	*/
+	
+	/*Fonction qui permet de retranscrire le contenu des deux tables de la bdd dans le byteBufferOutputStream
+	 * */
+	public void tablesRetransciption(DataBaseTreeManager managerWriter){
+		try{
+			while(managerWriter.moveToNextLine()){//on lit la nouvelle ligne
+				Log.d("debug writer","131");
+				if(managerWriter.getCursor().getLevel()==7){//si la ligne correspond à une feuille
+					ArrayList<String> details = connecteur.getLeafDetails(managerWriter.getCursor().getReference());//on demande ses détails au connecteur
+					this.file.write((managerWriter.getCursor().getLevel()+"/").getBytes());//ouverture d'un noeud dans le fichier correspondant à la feuille
+					int compteurslash1 = 1;
+					for(String field : details){//on inscrit à la suite ses détails
+						this.file.write(field.getBytes());
+						if(compteurslash1!=details.size()){
+							this.file.write("/".getBytes());//pour chaque élément non dernier de la liste on les fait suivre d'un slash
+						}
+						compteurslash1++;
+					}
+					this.file.write(";".getBytes());
+				}else{//si la ligne correspond à une noeud non feuille
+					Log.d("debug writer","132");
+					int refNode = managerWriter.getCursor().getReference();
+					int levelNode = managerWriter.getCursor().getLevel();
+					this.file.write((levelNode+"/"+refNode+"$").getBytes());//ouverture d'un noeud + écriture de sa reference dans le fichier
+				}
+			}
+		}catch(DataBaseException e){
+			e.printStackTrace();
+		}catch(IOException e){
+			e.printStackTrace();
+		}
+		
+	}
+	
 	
 	/*Fonction qui permet d'initialiser nodeRetranscription : elle permet l'insertion des commentaires d'entete
 	 * puis une fois l'écriture terminée, elle prévient le connecteur de remettre à zero tout le systeme de stockage
@@ -84,16 +115,13 @@ public class FileGenerator extends AsyncTask<Void, Void, ByteArrayOutputStream> 
 		try {
 			//on verifie s'il ya des feuilles à envoyer:
 			if(this.connecteur.hasLeaf()){	
-				this.file.write(("[["+comments+"],").getBytes());//ouverture du fichier
-
-				this.nodeRetranscription(managerWriter);
-				Log.d("DEBUG WRITER","13");
-				this.file.write(("]").getBytes());
-				Log.d("DEBUG WRITER","131");
+				Log.d("debug writer","11");
+				this.file.write(("/#"+comments+"#/").getBytes());//ouverture du fichier
+				Log.d("debug writer","12");
+				this.tablesRetransciption(managerWriter);
+				Log.d("debug writer","13");
 				//une fois le fichier généré on remet à zéro tout le systeme de stockage
-				this.connecteur.completeReset();
-				
-				
+				this.connecteur.completeReset();		
 			}else{
 				throw new DataBaseException("no leaf to be write!");
 			}
@@ -106,9 +134,10 @@ public class FileGenerator extends AsyncTask<Void, Void, ByteArrayOutputStream> 
 	//tache principale en background
 	@Override
 	protected ByteArrayOutputStream doInBackground(Void... params) {
-		Log.d("DEBUG WRITER","11");
 		try {
+			Log.d("debug writer","1");
 			completeRetranscription(this.comments, this.connecteur.prepareManager());
+			Log.d("debug writer","2");
 			return this.file;
 		} catch (DataBaseException e) {//Dans le cas ou il n'y a pas de feuilles à écrire
 			e.printStackTrace();
@@ -122,11 +151,10 @@ public class FileGenerator extends AsyncTask<Void, Void, ByteArrayOutputStream> 
 	//ce dernier le callback 
 	@Override
 	  protected void onPostExecute(ByteArrayOutputStream result) {
-		  Log.d("DEBUG WRITER","15");
 		  	if(result==null){
-		  		Log.d("DEBUG GENERATOR", "NO TEXT GENERATED");
+		  		Log.d("DEBUG FILE GENERATOR", "NO TEXT GENERATED");
 		  	}else{
-		  		Log.d("DEBUG GENERATOR", result.toString());
+		  		Log.d("DEBUG FILE GENERATOR", result.toString());
 		  	}
 	    	this.callback.onFileReady(result);
 	    	progressDialog.dismiss();

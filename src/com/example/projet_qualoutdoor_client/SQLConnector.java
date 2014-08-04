@@ -217,7 +217,7 @@ public class SQLConnector {
 			
 			//TEST
 			
-			String select = "SELECT * FROM "+this.dbCreator.getTableReference().getName() ;
+			String select = "SELECT * FROM "+this.dbCreator.getTableReference().getName() +" ORDER BY LINE ASC" ;
 			Cursor c = this.db.rawQuery(select,null);
 			String str = DatabaseUtils.dumpCursorToString(c);
 			Log.d("DEBUG REFERENCE",str);
@@ -318,7 +318,8 @@ public class SQLConnector {
 	 * 
 	 * Manager replacé sur la racine*/
 	public void completeReset() throws DataBaseException{
-
+			db.execSQL("DROP TABLE IF EXISTS '" + this.dbCreator.getTableReference().getName() + "' ");
+			db.execSQL("DROP TABLE IF EXISTS '" + this.dbCreator.getTableMeasure().getName() + "'");
 			this.dbCreator.onCreate(db);
 			
 			this.oldContext.reset();
