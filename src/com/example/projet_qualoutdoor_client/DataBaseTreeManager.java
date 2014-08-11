@@ -29,17 +29,21 @@ public class DataBaseTreeManager {
 	
 	/*Fonction qui permet de trouver la ligne du dernier élément du sous arbre dont le curseur pointe sur la racine*/
 	public int getSubTreeBoundary(){
+		Log.d("debug tree","looking for boudary of sub tree rooted by " +this.cursor.getReference()+" on line "+this.cursor.getLine());
 		int lastChild;
-		String selectQuery = "SELECT min(line) FROM "+table.getName()+" WHERE level = ? AND line > ? ";
+		String selectQuery = "SELECT line , VALUE , LEVEL  FROM "+table.getName()+" WHERE level <= ? AND line > ?  ORDER BY LINE ASC ";
 		Cursor c = db.rawQuery(selectQuery, new String[] {Integer.toString(this.cursor.level), Integer.toString(this.cursor.line)});
 		if (c.moveToFirst()) {//si un noeud de même étage est trouvé
 			lastChild = c.getInt(0)-1;//on recupère la ligne correspondant au dernier élément du sous arbre
+			Log.d("debug tree____","sub tree boundary found on line "+lastChild);
+			Log.d("debug tree_____","next brother details are ref: "+c.getInt(1)+" lev: "+c.getInt(2)+" Line:"+c.getInt(0) );
 		}else{//sinon tous les autres éléments de la liste font partie du sous arbre
 			String countQuery = "SELECT Count(*) FROM "+table.getName();//on regarde le nombre d'éléments dans la table
 			Cursor c2 = db.rawQuery(countQuery,null);
 			c2.moveToFirst();
-			lastChild = c2.getInt(0);//la ligne du dernier élément de la liste correspond au nombre total de ligne grace à notre convention	 
+			lastChild = c2.getInt(0)+1;//la ligne du dernier élément de la liste correspond au nombre total de ligne grace à notre convention	 
 			c2.close();
+			Log.d("debug tree____","sub tree boundary not found : considering last node of the whole tree, line is "+lastChild);
 		}  
 		c.close();
 		return lastChild;
@@ -53,13 +57,16 @@ public class DataBaseTreeManager {
 		boolean result;
 		//on repère les limites du sous arbre donc le cuseur pointe sur la racine afin de borner l'intervalle de recherche:
 		int boundary = getSubTreeBoundary();
+		Log.d("debug tree____","limite of sub tree rooted by "+this.cursor.getReference()+ "is "+boundary);
 		//on recherche la référence indiqué en se limitant au boundary
-		String selectQuery = "SELECT * FROM "+table.getName()+" WHERE VALUE = ? AND line <= ? ";
-		Cursor c = db.rawQuery(selectQuery, new String[] {Integer.toString(ref), Integer.toString(boundary)});
+		String selectQuery = "SELECT  LINE , VALUE , LEVEL  FROM "+table.getName()+" WHERE VALUE = ? AND line <= ? AND line > ?";
+		Cursor c = db.rawQuery(selectQuery, new String[] {Integer.toString(ref), Integer.toString(boundary),Integer.toString(this.cursor.line)});
 		if (c.moveToFirst()) {//si un noeud de même étage est trouvé on update le curseur et on renvoie true
 			this.cursor.update(c.getInt(0), c.getInt(1), c.getInt(2));
 			result = true;
+			Log.d("____debug tree___","node found "+ref+" , details are line: "+c.getInt(0)+" ref: "+c.getInt(1)+" level:"+c.getInt(2));
 		}else{
+			Log.d("____debug tree___","node not found "+ref);
 			result = false; 
 		}
 		return result;	
@@ -93,6 +100,7 @@ public class DataBaseTreeManager {
 	/*fonction qui permet devoir si un noeud existe et s'il n'existe pas, elle le créée*/
 	public void findOrCreate(int ref){
 		if(!this.contains(ref)){//Si l'intervalle courant ne contient pas de noeud contenant la référence indiquée
+			Log.d("____debug tree___","node created "+ref);
 			this.insert(ref);//alors on le crée
 		}//Dans tous les cas le DataBaseTreeManager aura ses bornes mises à jour
 	}
@@ -112,11 +120,15 @@ public class DataBaseTreeManager {
 		     if (c.moveToFirst()) {
 		    	 //on a retrouvé le père on met à jour les champs du curseur
 	             this.cursor.update(c.getInt(0), c.getInt(1), c.getInt(2));
+	             Log.d("debug tree","manager now pointing on " + c.getInt(1) +" on level "+ c.getInt(2));
 	        }else{
 	        	throw new DataBaseException("TREE MANAGER GET FATHER : can't find node father");
 	        }
 		    c.close();
 		}//si on pointe déjà sur la racine, on ne fait rien.	
+		else{
+			Log.d("debug tree","manager now pointing on root");
+		}
 	}
 	
 	

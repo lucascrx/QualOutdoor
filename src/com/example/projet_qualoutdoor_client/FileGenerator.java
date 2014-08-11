@@ -116,7 +116,7 @@ public class FileGenerator extends AsyncTask<Void, Void, ByteArrayOutputStream> 
 			//on verifie s'il ya des feuilles à envoyer:
 			if(this.connecteur.hasLeaf()){	
 				Log.d("debug writer","11");
-				this.file.write(("/#"+comments+"#/").getBytes());//ouverture du fichier
+				this.file.write(("#"+comments+"#").getBytes());//ouverture du fichier
 				Log.d("debug writer","12");
 				this.tablesRetransciption(managerWriter);
 				Log.d("debug writer","13");

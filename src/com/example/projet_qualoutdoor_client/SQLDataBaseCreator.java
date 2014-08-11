@@ -33,7 +33,7 @@ public class SQLDataBaseCreator extends SQLiteOpenHelper{
 		super(context, DATABASE_NAME, null, DATABASE_VERSION);
 		// TODO Auto-generated constructor stub
 		this.table_reference = new TableDB("recorder_tt",new String[] {"LINE","VALUE","LEVEL"}, new String[] {"INTEGER","INTEGER NOT NULL","INTEGER"});
-		this.table_measure = new TableDB("measure_it",new String[] {"ID","DATE","LAT","LNG","DATA"}, new String[] {"INTEGER PRIMARY KEY AUTOINCREMENT","DATETIME","REAL","REAL","VARCHAR"});
+		this.table_measure = new TableDB("measure_it",new String[] {"ID","DATE","LAT","LNG","DATA"}, new String[] {"INTEGER PRIMARY KEY AUTOINCREMENT","TIMESTAMP default (strftime('%s', 'now'))","REAL","REAL","VARCHAR"});
 		
 	}
 	

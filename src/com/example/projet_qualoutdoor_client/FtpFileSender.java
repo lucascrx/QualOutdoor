@@ -48,7 +48,7 @@ public class FtpFileSender implements Sender{
 			
 	
 			//mise en forme de l'url complete
-			String target = "ftp://"+this.user+":"+this.password+"@"+url+this.storingPath+fileName+"FTP"+".csv";
+			String target = "ftp://"+this.user+":"+this.password+"@"+url+this.storingPath+fileName+"FTP";
 			//création de l'URL
 			URL targetAddress = new URL(target);
 			//ouverture de la connection

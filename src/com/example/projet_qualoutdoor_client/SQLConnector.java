@@ -179,7 +179,7 @@ public class SQLConnector {
 	public int insertData(long lat, long lng,String data) throws DataBaseException{
 		int id = -1;
 		//on prépare la requete d'insertion, la date est générée par SQL
-			String insertQuery = "INSERT INTO "+this.dbCreator.getTableMeasure().getName()+" (DATE , LAT , LNG, DATA) VALUES (CURRENT_TIMESTAMP ,"+lat+","+lng+", '"+data+"' );";
+			String insertQuery = "INSERT INTO "+this.dbCreator.getTableMeasure().getName()+" ( LAT , LNG, DATA) VALUES ("+lat+","+lng+", '"+data+"' );";
 			db.execSQL(insertQuery);//Execution de la requete d'insertion
 			Cursor c = db.rawQuery("SELECT last_insert_rowid()", null);//on récupère l'ID du dernier élément inséré
 			if(c.moveToFirst()){//si on retrouve bien la ligne insérée on retrouve son ID
